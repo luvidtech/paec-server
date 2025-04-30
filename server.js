@@ -10,6 +10,8 @@ import { fileURLToPath } from 'url'
 import passport from 'passport'
 
 import authRoutes from './routes/auth/authRoutes.js'
+import patientFormRoutes from './routes/patientformRoutes/patientFormRoutes.js'
+import ghdFormRoutes from './routes/ghdformRoutes/ghdformRoutes.js'
 
 
 import Owner from './models/adminModel.js'
@@ -26,7 +28,6 @@ app.use(cookieParser())
 const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:3000',
-  'http://localhost:8081',
   'http://localhost:5173',
 ]
 
@@ -80,6 +81,8 @@ const createAdminIfNotExists = async () => {
 createAdminIfNotExists()
 
 app.use('/api/auth', authRoutes)
+app.use('/api/patientform', patientFormRoutes)
+app.use('/api/ghdform', ghdFormRoutes)
 
 
 // Serve static files
