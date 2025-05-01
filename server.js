@@ -81,8 +81,8 @@ const createAdminIfNotExists = async () => {
 createAdminIfNotExists()
 
 app.use('/api/auth', authRoutes)
-app.use('/api/patientform', patientFormRoutes)
-app.use('/api/ghdform', ghdFormRoutes)
+app.use('/api/baseline', baselineFormRoutes)
+app.use('/api/followup', followupFormRoutes)
 
 
 // Serve static files

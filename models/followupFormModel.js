@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const ghdformSchema = new mongoose.Schema({
+const followupFormSchema = new mongoose.Schema({
 
     patientform: {
         type: mongoose.Schema.Types.ObjectId,
@@ -133,6 +133,6 @@ const ghdformSchema = new mongoose.Schema({
     }
 })
 
-const Ghdform = mongoose.model('Ghdform', ghdformSchema)
+const FollowupForm = mongoose.model('FollowupForm', followupFormSchema)
 
-export default Ghdform
+export default FollowupForm

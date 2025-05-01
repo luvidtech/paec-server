@@ -1,12 +1,12 @@
-import Ghdform from "../../models/ghdform.js"
+import BaselineForm from "../../models/baselineFormModel.js"
 import Patientform from "../../models/patientform.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 
 // Create new patient form
-export const createPatientForm = asyncHandler(async (req, res) => {
+export const createBaselineForm = asyncHandler(async (req, res) => {
     try {
         const formData = req.body
-        const newForm = new Patientform(formData)
+        const newForm = new BaselineForm(formData)
         const savedForm = await newForm.save()
         res.status(201).json(savedForm)
     } catch (error) {

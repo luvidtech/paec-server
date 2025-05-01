@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const patientformSchema = new mongoose.Schema({
+const baselineFormSchema = new mongoose.Schema({
     patientDetails: {
         paecNo: String,
         uhid: String,
@@ -291,6 +291,6 @@ const patientformSchema = new mongoose.Schema({
     }
 })
 
-const Patientform = mongoose.model('Patientform', patientformSchema)
+const BaselineForm = mongoose.model('BaselineForm', baselineFormSchema)
 
-export default Patientform
+export default BaselineForm
