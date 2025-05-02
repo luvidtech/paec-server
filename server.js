@@ -9,12 +9,12 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import passport from 'passport'
 
-import authRoutes from './routes/auth/authRoutes.js'
+import userRoutes from './routes/auth/userRoutes.js'
 import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
 import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
 
 
-import Owner from './models/adminModel.js'
+import User from './models/userModel.js'
 
 connectDB()
 
@@ -62,7 +62,7 @@ app.use(passport.initialize())
 
 
 const createAdminIfNotExists = async () => {
-  const adminExists = await Owner.findOne({ email: process.env.ADMIN_EMAIL })
+  const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL })
   if (!adminExists) {
     const adminData = {
       adminName: process.env.ADMIN_USERNAME,
@@ -70,17 +70,16 @@ const createAdminIfNotExists = async () => {
       phone: process.env.ADMIN_PHONE,
       password: process.env.ADMIN_PASSWORD,
       userName: process.env.ADMIN_USERNAME,
-      isOwner: true,
-      role: process.env.ADMIN_ROLE || 'admin',
+      role: process.env.ADMIN_ROLE || 'admin'
     }
-    await Owner.create(adminData)
+    await User.create(adminData)
   }
 }
 
 // Call this function on server startup
 createAdminIfNotExists()
 
-app.use('/api/auth', authRoutes)
+app.use('/api/auth', userRoutes)
 app.use('/api/baseline', baselineFormRoutes)
 app.use('/api/followup', followupFormRoutes)
 

@@ -1,12 +1,8 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 
-const adminSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
     {
-        adminName: {
-            type: String,
-            required: true,
-        },
         userName: {
             type: String,
             required: true,
@@ -32,10 +28,9 @@ const adminSchema = new mongoose.Schema(
             required: true,
         },
 
-        isOwner: {
-            type: Boolean,
-            required: true,
-            default: true,
+        role: {
+            type: String,
+            enum: ['admin', 'staff'],
         },
         isEmailVerified: {
             type: Boolean,
@@ -88,12 +83,12 @@ const adminSchema = new mongoose.Schema(
     }
 )
 
-adminSchema.methods.matchPassword = async function (enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password)
 }
 
 //Password Hashing
-adminSchema.pre('save', async function (next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {
         return next()
     }
@@ -106,6 +101,6 @@ adminSchema.pre('save', async function (next) {
     }
 })
 
-const Admin = mongoose.model('Admin', adminSchema)
+const User = mongoose.model('User', userSchema)
 
-export default Admin
+export default User
