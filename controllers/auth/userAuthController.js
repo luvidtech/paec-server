@@ -5,7 +5,7 @@ import asyncHandler from "../../utils/asyncHandler.js"
 import { sendOtpEmail } from "../../utils/mailer.js"
 
 export const registerUser = asyncHandler(async (req, res, next) => {
-    const { loginId, password, userName } = req.body
+    const { loginId, password, userName, centerId } = req.body
 
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
@@ -34,7 +34,8 @@ export const registerUser = asyncHandler(async (req, res, next) => {
                 [isEmail ? 'email' : 'phone']: loginId,
                 password,
                 role: 'staff',
-                isActive: true
+                isActive: true,
+                center: centerId
             })
         } catch (error) {
             return next(new HttpError("Registration failed: " + error.message, 400))
@@ -42,9 +43,6 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     } else if (user) {
         return next(new HttpError("User Already exists", 404))
     }
-
-    // Generate token for successful login/registration
-    generateToken(res, user._id)
 
     res.status(200).json({
         _id: user._id,
@@ -54,6 +52,28 @@ export const registerUser = asyncHandler(async (req, res, next) => {
         role: user.role,
     })
 })
+
+export const getUsersByCenter = asyncHandler(async (req, res, next) => {
+
+    const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized to register a user", 403))
+    }
+
+    const users = await User.find({
+        center: req.params.id,
+        role: 'staff',
+        'isDeleted.status': false
+    }).select('userName email phone').populate('center', 'centerName centerCode')
+
+    if (!users || users.length === 0) {
+        return res.status(404).json({ message: "No users found for this center" })
+    }
+
+    res.status(200).json(users)
+})
+
 
 export const loginUser = asyncHandler(async (req, res, next) => {
     const { loginId, password } = req.body
@@ -95,7 +115,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
         name: user.userName,
         email: user.email,
         phone: user.phone,
-        role: role,
+        role: user.role,
     })
 })
 
@@ -177,7 +197,7 @@ export const verifyOtpUser = asyncHandler(async (req, res, next) => {
         name: user.userName,
         email: user.email,
         phone: user.phone,
-        role: "user.role",
+        role: user.role,
     }
 
     return res.json(data)
