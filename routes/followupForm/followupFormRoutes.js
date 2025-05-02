@@ -6,13 +6,14 @@ import {
     updateFollowupForm,
     deleteFollowupForm
 } from '../../controllers/followupForm/followupFormController.js'
+import { authenticateUser } from '../../utils/authMiddleware.js'
 
 const router = express.Router()
 
-router.post('/', createFollowupForm)
-router.get('/', getFollowupForm)
-router.get('/:id', getFollowupFormById)
-router.patch('/:id', updateFollowupForm)
-router.delete('/:id', deleteFollowupForm)
+router.post('/',authenticateUser, createFollowupForm)
+router.get('/',authenticateUser, getFollowupForm)
+router.get('/:id',authenticateUser, getFollowupFormById)
+router.patch('/:id',authenticateUser, updateFollowupForm)
+router.delete('/:id',authenticateUser, deleteFollowupForm)
 
 export default router

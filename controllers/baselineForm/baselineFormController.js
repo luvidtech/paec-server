@@ -13,6 +13,7 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
 
     try {
         const { patientDetails } = req.body
+
         const uhid = patientDetails?.uhid
 
         if (!uhid) {
@@ -32,8 +33,13 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
             })
         }
 
+        const formData = {
+            ...req.body,
+            staff: req.user._id
+        }
+
         // Create new form (even if deleted one exists)
-        const newForm = new BaselineForm(req.body)
+        const newForm = new BaselineForm(formData)
         const savedForm = await newForm.save()
 
         res.status(201).json(savedForm)
@@ -158,7 +164,7 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
 
 // Delete patient form
 export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
-    
+
     const form = await BaselineForm.findById({ _id: req.params.id, 'isDeleted.status': false })
 
     if (form) {

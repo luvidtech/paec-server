@@ -8,14 +8,15 @@ import {
 } from '../../controllers/baselineForm/baselineFormController.js'
 
 import { validateBaselineForm } from '../../validators/baselineFormValidator.js'
+import { authenticateUser } from '../../utils/authMiddleware.js'
 
 
 const router = express.Router()
 
-router.post('/', validateBaselineForm, createBaselineForm)
-router.get('/', getBaselineForm)
-router.get('/:id', getBaselineFormById)
-router.patch('/:id', updateBaselineForm)
-router.delete('/:id', deleteBaselineForm)
+router.post('/',authenticateUser, validateBaselineForm, createBaselineForm)
+router.get('/', authenticateUser, getBaselineForm)
+router.get('/:id', authenticateUser, getBaselineFormById)
+router.patch('/:id', authenticateUser, updateBaselineForm)
+router.delete('/:id', authenticateUser, deleteBaselineForm)
 
 export default router

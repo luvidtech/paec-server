@@ -1,6 +1,10 @@
 import mongoose from 'mongoose'
 
 const baselineFormSchema = new mongoose.Schema({
+    center: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Center",
+    },
     patientDetails: {
         paecNo: String,
         uhid: {
@@ -287,6 +291,10 @@ const baselineFormSchema = new mongoose.Schema({
             di: Boolean
         },
         mriAbnormality: Boolean
+    },
+    staff: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
     },
     isDeleted: {
         status: { type: Boolean, default: false },

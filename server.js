@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 import passport from 'passport'
 
 import userRoutes from './routes/auth/userRoutes.js'
+import centerRoutes from './routes/center/centerRoutes.js'
 import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
 import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
 
@@ -80,6 +81,7 @@ const createAdminIfNotExists = async () => {
 createAdminIfNotExists()
 
 app.use('/api/auth', userRoutes)
+app.use('/api/center', centerRoutes)
 app.use('/api/baseline', baselineFormRoutes)
 app.use('/api/followup', followupFormRoutes)
 

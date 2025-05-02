@@ -7,6 +7,12 @@ import { sendOtpEmail } from "../../utils/mailer.js"
 export const registerUser = asyncHandler(async (req, res, next) => {
     const { loginId, password, userName } = req.body
 
+    const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized to register a user", 403))
+    }
+
     // Validate required fields
     if (!loginId || !password) {
         return next(new HttpError("Please provide email/phone and password", 400))
@@ -168,10 +174,10 @@ export const verifyOtpUser = asyncHandler(async (req, res, next) => {
     generateToken(res, user._id)
     const data = {
         _id: user._id,
-        name: user.username,
+        name: user.userName,
         email: user.email,
         phone: user.phone,
-        role: "superadmin",
+        role: "user.role",
     }
 
     return res.json(data)

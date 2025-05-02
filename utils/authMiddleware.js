@@ -1,18 +1,18 @@
 import jwt from 'jsonwebtoken'
-import Owner from '../models/adminModel.js'
 import asyncHandler from './asyncHandler.js'
 import dotenv from 'dotenv'
+import User from '../models/userModel.js'
 dotenv.config()
 
 
-export const authenticateOwner = asyncHandler(async (req, res, next) => {
+export const authenticateUser = asyncHandler(async (req, res, next) => {
     let token
     token = req.cookies.jwt
 
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
-            req.owner = await Owner.findById(decoded.userId).select('-password')
+            req.user = await User.findById(decoded.userId).select('_id')
             next()
         } catch (err) {
             console.error(err)

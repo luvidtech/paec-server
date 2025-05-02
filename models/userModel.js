@@ -7,9 +7,9 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        company: {
+        center: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Company"
+            ref: "Center"
         },
         email: {
             type: String,
@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema(
             },
             deletedBy: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Owner'
+                ref: 'User'
             },
             deletedTime: {
                 type: Date,
