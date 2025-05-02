@@ -53,6 +53,20 @@ export const getCenters = asyncHandler(async (req, res, next) => {
     })
 })
 
+export const getCenterById = asyncHandler(async (req, res, next) => {
+    const center = await Center.findOne({
+        _id: req.params.id,
+        'isDeleted.status': false
+    })
+
+    if (!center) {
+        return res.status(404).json({ message: "Center not found" })
+    }
+
+    res.status(200).json(center)
+})
+
+
 
 // Update Center
 export const updateCenter = asyncHandler(async (req, res, next) => {
