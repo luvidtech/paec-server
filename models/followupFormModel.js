@@ -2,15 +2,15 @@ import mongoose from 'mongoose'
 
 const followupFormSchema = new mongoose.Schema({
 
-    patientform: {
+    baselineForm: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Patientform"
+        ref: "BaselineForm",
     },
+
     visitDetails: {
         lastVisitDate: Date,
         currentVisitDate: {
             type: Date,
-            unique: true, // Enforces uniqueness
             required: true
         }
     },
@@ -106,7 +106,7 @@ const followupFormSchema = new mongoose.Schema({
                 dose: Number, // ug/day
             },
             corticosteroids: {
-                type: String, // "Prednisone" or "HC"
+                whichtype: String, // "Prednisone" or "HC"
                 dose: Number, // mg/day
                 frequency: String // "Single dose" or "two doses"
             },
@@ -130,8 +130,15 @@ const followupFormSchema = new mongoose.Schema({
     updatedAt: {
         type: Date,
         default: Date.now
-    }
-})
+    },
+    isDeleted: {
+        status: { type: Boolean, default: false },
+        deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        deletedTime: { type: Date }
+    },
+},
+    { timestamps: true })
+
 
 const FollowupForm = mongoose.model('FollowupForm', followupFormSchema)
 

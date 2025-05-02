@@ -10,8 +10,8 @@ import { fileURLToPath } from 'url'
 import passport from 'passport'
 
 import authRoutes from './routes/auth/authRoutes.js'
-import patientFormRoutes from './routes/patientformRoutes/patientFormRoutes.js'
-import ghdFormRoutes from './routes/ghdformRoutes/ghdformRoutes.js'
+import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
+import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
 
 
 import Owner from './models/adminModel.js'

@@ -3,8 +3,12 @@ import mongoose from 'mongoose'
 const baselineFormSchema = new mongoose.Schema({
     patientDetails: {
         paecNo: String,
-        uhid: String,
-        name: String,
+        uhid: {
+            type: String
+        },
+        name: {
+            type: String
+        },
         dob: Date,
         age: Number,
         sex: String, // "Male" or "Female"
@@ -18,6 +22,10 @@ const baselineFormSchema = new mongoose.Schema({
             cell1: String,
             cell2: String
         }
+    },
+
+    visitDate: {
+        type: Date,
     },
 
     history: {
@@ -280,16 +288,13 @@ const baselineFormSchema = new mongoose.Schema({
         },
         mriAbnormality: Boolean
     },
-
-    createdAt: {
-        type: Date,
-        default: Date.now
+    isDeleted: {
+        status: { type: Boolean, default: false },
+        deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        deletedTime: { type: Date }
     },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-})
+},
+    { timestamps: true })
 
 const BaselineForm = mongoose.model('BaselineForm', baselineFormSchema)
 

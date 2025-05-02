@@ -1,18 +1,46 @@
 import BaselineForm from "../../models/baselineFormModel.js"
-import Patientform from "../../models/patientform.js"
+import FollowupForm from "../../models/followupFormModel.js"
 import asyncHandler from "../../utils/asyncHandler.js"
+import { validationResult } from 'express-validator'
+import HttpError from "../../utils/httpErrorMiddleware.js"
 
-// Create new patient form
+// Create new baseline form
 export const createBaselineForm = asyncHandler(async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() })
+    }
+
     try {
-        const formData = req.body
-        const newForm = new BaselineForm(formData)
+        const { patientDetails } = req.body
+        const uhid = patientDetails?.uhid
+
+        if (!uhid) {
+            return res.status(400).json({ message: 'UHID is required in patientDetails' })
+        }
+
+        // Only check if a non-deleted form exists
+        const existingForm = await BaselineForm.findOne({
+            'patientDetails.uhid': uhid,
+            'isDeleted.status': false
+        })
+
+        if (existingForm) {
+            return res.status(400).json({
+                message: 'File already exists',
+                field: { 'patientDetails.uhid': uhid }
+            })
+        }
+
+        // Create new form (even if deleted one exists)
+        const newForm = new BaselineForm(req.body)
         const savedForm = await newForm.save()
+
         res.status(201).json(savedForm)
     } catch (error) {
         if (error.code === 11000) {
             return res.status(400).json({
-                message: 'Duplicate key error',
+                message: 'File already exists',
                 field: error.keyValue
             })
         }
@@ -20,31 +48,44 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
     }
 })
 
-// Get all patient forms
-export const getAllPatientForms = asyncHandler(async (req, res) => {
-    try {
-        const forms = await Patientform.find()
-        res.json(forms)
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-})
 
-// Get filtered patient forms
-export const getFilteredPatientForms = asyncHandler(async (req, res) => {
+
+export const getBaselineForm = asyncHandler(async (req, res) => {
     try {
-        const { page = 1, limit = 10, sex, minAge } = req.query
-        const query = {}
+        const {
+            page = 1,
+            limit = 10,
+            sex,
+            minAge,
+            uhid,
+            name,
+            visitDate
+        } = req.query
+
+        const query = { 'isDeleted.status': false }
 
         if (sex) query['patientDetails.sex'] = sex
         if (minAge) query['patientDetails.age'] = { $gte: parseInt(minAge) }
+        if (uhid) query['patientDetails.uhid'] = uhid
+        if (name) query['patientDetails.name'] = { $regex: name, $options: 'i' }
 
-        const forms = await Patientform.find(query)
+        if (visitDate) {
+            const parsedDate = new Date(visitDate)
+            const nextDate = new Date(parsedDate)
+            nextDate.setDate(parsedDate.getDate() + 1)
+
+            query['visitDate'] = {
+                $gte: parsedDate,
+                $lt: nextDate
+            }
+        }
+
+        const forms = await BaselineForm.find(query)
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit))
             .exec()
 
-        const count = await Patientform.countDocuments(query)
+        const count = await BaselineForm.countDocuments(query)
 
         res.json({
             forms,
@@ -56,10 +97,11 @@ export const getFilteredPatientForms = asyncHandler(async (req, res) => {
     }
 })
 
+
 // Get single patient form by ID
-export const getPatientFormById = asyncHandler(async (req, res) => {
+export const getBaselineFormById = asyncHandler(async (req, res) => {
     try {
-        const form = await Patientform.findById(req.params.id)
+        const form = await BaselineForm.findById(req.params.id)
         if (!form) {
             return res.status(404).json({ message: 'Form not found' })
         }
@@ -69,27 +111,38 @@ export const getPatientFormById = asyncHandler(async (req, res) => {
     }
 })
 
-// Get patient forms by UHID
-export const getPatientFormsByUhid = asyncHandler(async (req, res) => {
-    try {
-        const forms = await Patientform.find({ 'patientDetails.uhid': req.params.uhid })
-        res.json(forms)
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-})
-
 // Update patient form
-export const updatePatientForm = asyncHandler(async (req, res) => {
+export const updateBaselineForm = asyncHandler(async (req, res) => {
     try {
-        const updatedForm = await Patientform.findByIdAndUpdate(
-            req.params.id,
-            req.body,
+        const formId = req.params.id
+        const { patientDetails } = req.body
+
+        // If uhid is being updated, check for conflict
+        if (patientDetails?.uhid) {
+            const existing = await BaselineForm.findOne({
+                _id: { $ne: formId }, // Exclude the current doc
+                'patientDetails.uhid': patientDetails.uhid,
+                'isDeleted.status': false
+            })
+
+            if (existing) {
+                return res.status(400).json({
+                    message: 'UHID already exists in another active record',
+                    field: { 'patientDetails.uhid': patientDetails.uhid }
+                })
+            }
+        }
+
+        const updatedForm = await BaselineForm.findByIdAndUpdate(
+            formId,
+            { $set: req.body },
             { new: true, runValidators: true }
         )
+
         if (!updatedForm) {
             return res.status(404).json({ message: 'Form not found' })
         }
+
         res.json(updatedForm)
     } catch (error) {
         if (error.code === 11000) {
@@ -102,15 +155,37 @@ export const updatePatientForm = asyncHandler(async (req, res) => {
     }
 })
 
+
 // Delete patient form
-export const deletePatientForm = asyncHandler(async (req, res) => {
-    try {
-        const deletedForm = await Patientform.findByIdAndDelete(req.params.id)
-        if (!deletedForm) {
-            return res.status(404).json({ message: 'Form not found' })
+export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
+    
+    const form = await BaselineForm.findById({ _id: req.params.id, 'isDeleted.status': false })
+
+    if (form) {
+        // Mark the baseline form as deleted (soft delete)
+        form.isDeleted = {
+            status: true,
+            deletedBy: req.user ? req.user._id : null,
+            deletedTime: Date.now()
         }
-        res.json({ message: 'Form deleted successfully' })
-    } catch (error) {
-        res.status(500).json({ message: error.message })
+
+        // Find all follow-up forms that reference this baseline form and mark them as deleted
+        await FollowupForm.updateMany(
+            { baselineForm: req.params.id, 'isDeleted.status': false },
+            {
+                $set: {
+                    'isDeleted.status': true,
+                    'isDeleted.deletedBy': req.user ? req.user._id : null,
+                    'isDeleted.deletedTime': Date.now()
+                }
+            }
+        )
+
+        // Save the updated baseline form
+        await form.save()
+
+        res.status(200).json({ message: "Baseline form and related follow-ups deleted" })
+    } else {
+        return next(new HttpError("Baseline form not found", 404))
     }
 })

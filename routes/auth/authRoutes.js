@@ -1,5 +1,5 @@
 import express from 'express'
-import { loginAdmin, logoutAdmin, verifyOtpAdmin } from '../../controller/auth/adminAuthController.js'
+import { loginAdmin, logoutAdmin, verifyOtpAdmin } from '../../controllers/auth/adminAuthController.js'
 
 const router = express()
 
