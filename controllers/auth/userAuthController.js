@@ -203,36 +203,63 @@ export const verifyOtpUser = asyncHandler(async (req, res, next) => {
     return res.json(data)
 })
 
-export const forgotPasswordUser = asyncHandler(async (req, res, next) => {
-    const { loginId } = req.body
+export const updateUserDetails = asyncHandler(async (req, res, next) => {
+    const { newPassword, email, phone, center } = req.body
 
-    if (!loginId) {
-        return next(new HttpError("Login ID is required", 400))
+    const isAdmin = await User.findOne({ _id: req.user.id, role: "admin", 'isDeleted.status': false })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized to register a user", 403))
     }
 
-    // Check if `loginId` is an email or phone number
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginId)
-
-    // Find the user based on `loginId`
-    let user
-    if (isEmail) {
-        user = await User.findOne({ email: loginId })
-    } else {
-        // If the login ID is not an email, we assume it's a phone number and search for the user by phone
-        user = await User.findOne({ phone: loginId })
-    }
-
-    // If the user is not found, return an error
+    // Find user
+    const user = await User.findOne({ _id: req.params.id, 'isDeleted.status': false, role: 'staff' })
     if (!user) {
-        return next(new HttpError("Invalid credentials or user not found", 404))
+        return next(new HttpError("User not found", 404))
     }
 
-    // Send OTP to the user's registered email, regardless of whether the loginId is email or phone
-    const recipientEmail = isEmail ? loginId : user.email
-    await generateAndSendOtp(user, recipientEmail)
+    // Update password if provided
+    if (newPassword) {
+        user.password = newPassword // Will be hashed by pre-save hook
+    }
+
+    // Update email if provided
+    if (email) {
+        // Check if email already exists (excluding current user)
+        const emailExists = await User.findOne({ email, _id: { $ne: userId } })
+        if (emailExists) {
+            return next(new HttpError("Email already in use", 400))
+        }
+        user.email = email
+    }
+
+    // Update phone if provided
+    if (phone) {
+        // Check if phone already exists (excluding current user)
+        const phoneExists = await User.findOne({ phone, _id: { $ne: userId } })
+        if (phoneExists) {
+            return next(new HttpError("Phone number already in use", 400))
+        }
+        user.phone = phone
+    }
+
+    // Update center if provided
+    if (center) {
+        user.center = center
+    }
+
+    // Save updated user
+    await user.save()
 
     res.status(200).json({
-        message: `OTP has been sent to your ${isEmail ? "email" : "registered email"
-            }. Please verify to continue.`,
+        success: true,
+        message: "User details updated successfully",
+        user: {
+            _id: user._id,
+            email: user.email,
+            phone: user.phone,
+            center: user.center,
+            username: user.userName
+        }
     })
 })

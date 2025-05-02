@@ -1,12 +1,10 @@
 import mongoose from 'mongoose'
 
 const followupFormSchema = new mongoose.Schema({
-
     baselineForm: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "BaselineForm",
     },
-
     visitDetails: {
         lastVisitDate: Date,
         currentVisitDate: {
@@ -14,7 +12,6 @@ const followupFormSchema = new mongoose.Schema({
             required: true
         }
     },
-
     ghTherapy: {
         takingGH: Boolean,
         details: {

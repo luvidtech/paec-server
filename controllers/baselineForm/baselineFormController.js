@@ -35,7 +35,8 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
 
         const formData = {
             ...req.body,
-            staff: req.user._id
+            staff: req.user._id,
+            center: req.user.center
         }
 
         // Create new form (even if deleted one exists)
