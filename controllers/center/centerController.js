@@ -2,6 +2,7 @@ import Center from '../../models/centreModel.js'
 import User from '../../models/userModel.js'
 import asyncHandler from '../../utils/asyncHandler.js'
 import HttpError from '../../utils/httpErrorMiddleware.js'
+import newLog from '../../utils/newlog.js'
 
 
 // Create Center
@@ -11,7 +12,7 @@ export const createCenter = asyncHandler(async (req, res, next) => {
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
     if (!isAdmin) {
-        return next(new HttpError("You are not authorized to register a user", 403))
+        return next(new HttpError("You are not authorized ", 403))
     }
 
     const existing = await Center.findOne({ centerCode, 'isDeleted.status': false })
@@ -21,6 +22,16 @@ export const createCenter = asyncHandler(async (req, res, next) => {
 
     const newCenter = new Center({ centerName, centerCode })
     const saved = await newCenter.save()
+
+    await newLog({
+        user: req.user._id,
+        action: 'created',
+        module: 'center',
+        modifiedData: {
+            centername: centerName,
+            centercode: centerCode,
+        }
+    })
 
     res.status(201).json(saved)
 })
@@ -90,15 +101,41 @@ export const updateCenter = asyncHandler(async (req, res, next) => {
         }
     }
 
+    const originalData = {
+        centerName: center.centerName,
+        centerCode: center.centerCode
+    }
+
     center.centerName = centerName || center.centerName
     center.centerCode = centerCode || center.centerCode
 
     const updated = await center.save()
+
+    const modifiedData = {}
+    if (originalData.centerName !== center.centerName) {
+        modifiedData.centerName = { from: originalData.centerName, to: center.centerName }
+    }
+    if (originalData.centerCode !== center.centerCode) {
+        modifiedData.centerCode = { from: originalData.centerCode, to: center.centerCode }
+    }
+
+    // Log if there are actual changes
+    if (Object.keys(modifiedData).length > 0) {
+        await newLog({
+            user: req.user._id,
+            action: 'updated',
+            module: 'center',
+            modifiedData
+        })
+    }
+
+
     res.json(updated)
 })
 
 // Soft Delete Center
 export const deleteCenter = asyncHandler(async (req, res, next) => {
+
     const center = await Center.findById(req.params.id)
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
@@ -117,5 +154,14 @@ export const deleteCenter = asyncHandler(async (req, res, next) => {
     }
 
     await center.save()
+
+    await newLog({
+        user: req.user._id,
+        action: 'deleted',
+        module: 'center',
+        modifiedData: {
+            centername: center.centerName,
+        }
+    })
     res.json({ message: 'Center deleted successfully' })
 })

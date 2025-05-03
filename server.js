@@ -71,7 +71,8 @@ const createAdminIfNotExists = async () => {
       phone: process.env.ADMIN_PHONE,
       password: process.env.ADMIN_PASSWORD,
       userName: process.env.ADMIN_USERNAME,
-      role: process.env.ADMIN_ROLE || 'admin'
+      role: process.env.ADMIN_ROLE || 'admin',
+      accessTo: process.env.ADMIN_ACCESS || 'all'
     }
     await User.create(adminData)
   }

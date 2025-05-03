@@ -12,7 +12,7 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
-            req.user = await User.findById(decoded.userId).select('_id center role userName email')
+            req.user = await User.findById(decoded.userId).select('_id center role userName email accessTo')
             next()
         } catch (err) {
             console.error(err)

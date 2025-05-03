@@ -27,7 +27,6 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-
         role: {
             type: String,
             enum: ['admin', 'staff'],
@@ -45,10 +44,10 @@ const userSchema = new mongoose.Schema(
             required: true,
             default: true,
         },
-        isDisabled: {
-            type: Boolean,
-            required: true,
-            default: false,
+        accessTo: {
+            type: String,
+            enum: ['all', 'own', 'center'],
+            default: 'center'
         },
         otp: {
             otpCode: {

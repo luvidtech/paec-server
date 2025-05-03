@@ -3,29 +3,44 @@ import { generateToken } from "../../utils/generateToken.js"
 import HttpError from "../../utils/httpErrorMiddleware.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 import { sendOtpEmail } from "../../utils/mailer.js"
+import newLog from "../../utils/newlog.js"
+import Center from "../../models/centreModel.js"
 
 export const registerUser = asyncHandler(async (req, res, next) => {
-    const { loginId, password, userName, centerId } = req.body
+    const { loginId, password, userName, accessTo, center } = req.body
 
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
-    if (!isAdmin) {
-        return next(new HttpError("You are not authorized to register a user", 403))
+    if (!isAdmin && !req.user._id) {
+        return next(new HttpError("You are not authorized", 403))
     }
 
-    // Validate required fields
     if (!loginId || !password) {
         return next(new HttpError("Please provide email/phone and password", 400))
     }
 
+    if (center) {
+        const centerExists = await Center.findOne({ _id: center, 'isDeleted.status': false })
+        if (!centerExists) {
+            return next(new HttpError("Provided center does not exist", 404))
+        }
+    }
+
+    if (Array.isArray(accessTo) && accessTo.length > 0) {
+        const centers = await Center.find({ _id: { $in: accessTo }, 'isDeleted.status': false })
+
+        if (centers.length !== accessTo.length) {
+            return next(new HttpError("One or more centers in accessTo do not exist", 404))
+        }
+    }
+
+
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginId)
 
-    // Try to find existing user
     let user = isEmail
-        ? await User.findOne({ email: loginId })
-        : await User.findOne({ phone: loginId })
+        ? await User.findOne({ email: loginId, 'isDeleted.status': false })
+        : await User.findOne({ phone: loginId, 'isDeleted.status': false })
 
-    // If user doesn't exist and username is provided, create new user
 
     if (!user && userName) {
         try {
@@ -35,8 +50,30 @@ export const registerUser = asyncHandler(async (req, res, next) => {
                 password,
                 role: 'staff',
                 isActive: true,
-                center: centerId
+                accessTo,
+                center
             })
+
+            const populatedUser = await user.populate('center', 'centerName')
+
+            await newLog({
+                user: user._id,
+                action: 'created',
+                module: 'user',
+                modifiedData: {
+                    user: user.userName,
+                    center: populatedUser.center?.centerName,
+                }
+            })
+
+            res.status(200).json({
+                _id: user._id,
+                name: user.userName,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+            })
+
         } catch (error) {
             return next(new HttpError("Registration failed: " + error.message, 400))
         }
@@ -44,13 +81,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
         return next(new HttpError("User Already exists", 404))
     }
 
-    res.status(200).json({
-        _id: user._id,
-        name: user.userName,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-    })
+
 })
 
 export const getUsersByCenter = asyncHandler(async (req, res, next) => {
@@ -85,8 +116,8 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginId)
 
     const user = isEmail
-        ? await User.findOne({ email: loginId })
-        : await User.findOne({ phone: loginId })
+        ? await User.findOne({ email: loginId, 'isDeleted.status': false })
+        : await User.findOne({ phone: loginId, 'isDeleted.status': false })
 
     if (!user) {
         return next(new HttpError("User not found", 404))
@@ -97,18 +128,29 @@ export const loginUser = asyncHandler(async (req, res, next) => {
         return next(new HttpError("Invalid Username or Password", 401))
     }
 
-    let role
-
     if (user.role === "admin") {
         generateAndSendOtp(user)
 
         return res.status(200).json({
-            message: `OTP has been sent to your ${isEmail ? "email" : "phone"}.`,
+            message: `OTP has been sent to ${isEmail ? "email" : "phone"}.`,
         })
     } else if (user.role === "staff") {
-        role = "staff"
+        const role = "staff"
     }
+
     generateToken(res, user._id)
+
+    const populatedUser = await user.populate('center', 'centerName')
+
+    await newLog({
+        user: user._id,
+        action: 'created',
+        module: 'user',
+        modifiedData: {
+            user: user.userName,
+            center: populatedUser.center?.centerName,
+        }
+    })
 
     res.status(200).json({
         _id: user._id,
@@ -120,14 +162,10 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 })
 
 export const generateAndSendOtp = async (user) => {
-    // Check if OTP is still valid and was sent within the last 60 seconds (1 minute)
     if (user.otp && user.otp.expiresIn > Date.now()) {
-        // Calculate the remaining time in milliseconds
         const timeLeft = user.otp.expiresIn - Date.now()
 
-        // If less than 60 seconds remain
         if (timeLeft < 60000) {
-            // Convert remaining time to seconds
             const secondsLeft = Math.ceil(timeLeft / 1000)
 
             throw new HttpError(
@@ -170,10 +208,9 @@ export const verifyOtpUser = asyncHandler(async (req, res, next) => {
 
     let user
     if (loginId.includes("@")) {
-        user = await User.findOne({ email: loginId })
-        console.log(User, "~!")
+        user = await User.findOne({ email: loginId, 'isDeleted.status': false })
     } else {
-        user = await User.findOne({ phone: loginId })
+        user = await User.findOne({ phone: loginId, 'isDeleted.status': false })
     }
 
     if (!user) {
@@ -200,56 +237,87 @@ export const verifyOtpUser = asyncHandler(async (req, res, next) => {
         role: user.role,
     }
 
+    const populatedUser = await user.populate('center', 'centerName')
+
+    await newLog({
+        user: user._id,
+        action: 'created',
+        module: 'user',
+        modifiedData: {
+            user: user.userName,
+            center: populatedUser.center?.centerName,
+        }
+    })
+
     return res.json(data)
 })
 
 export const updateUserDetails = asyncHandler(async (req, res, next) => {
-    const { newPassword, email, phone, center } = req.body
+    const { newPassword, email, phone, center, username } = req.body
 
     const isAdmin = await User.findOne({ _id: req.user.id, role: "admin", 'isDeleted.status': false })
-
     if (!isAdmin) {
-        return next(new HttpError("You are not authorized to register a user", 403))
+        return next(new HttpError("You are not authorized to update user details", 403))
     }
 
-    // Find user
-    const user = await User.findOne({ _id: req.params.id, 'isDeleted.status': false, role: 'staff' })
+    const user = await User.findOne({ _id: req.params.id, 'isDeleted.status': false, role: 'staff' }).populate('center')
     if (!user) {
         return next(new HttpError("User not found", 404))
     }
 
-    // Update password if provided
+    const oldUser = { ...user.toObject() }
+
     if (newPassword) {
-        user.password = newPassword // Will be hashed by pre-save hook
+        user.password = newPassword
     }
 
-    // Update email if provided
     if (email) {
-        // Check if email already exists (excluding current user)
-        const emailExists = await User.findOne({ email, _id: { $ne: userId } })
+        const emailExists = await User.findOne({ email, 'isDeleted.status': false, _id: { $ne: user._id } })
         if (emailExists) {
             return next(new HttpError("Email already in use", 400))
         }
         user.email = email
     }
 
-    // Update phone if provided
     if (phone) {
-        // Check if phone already exists (excluding current user)
-        const phoneExists = await User.findOne({ phone, _id: { $ne: userId } })
+        const phoneExists = await User.findOne({ phone, 'isDeleted.status': false, _id: { $ne: user._id } })
         if (phoneExists) {
             return next(new HttpError("Phone number already in use", 400))
         }
         user.phone = phone
     }
 
-    // Update center if provided
     if (center) {
         user.center = center
     }
 
-    // Save updated user
+    if (username && username !== user.userName) {
+        user.userName = username
+    }
+
     await user.save()
+
+    const modifiedData = {}
+    if (email && oldUser.email !== email) modifiedData.email = { from: oldUser.email, to: email }
+    if (phone && oldUser.phone !== phone) modifiedData.phone = { from: oldUser.phone, to: phone }
+    if (newPassword) modifiedData.password = { from: '***', to: '***' }
+    if (username && oldUser.userName !== username) modifiedData.userName = { from: oldUser.userName, to: username }
+    if (center && oldUser.center?.toString() !== center.toString()) {
+        const newCenter = await Center.findById(center)
+        modifiedData.center = {
+            from: oldUser.center?.centerName || oldUser.center,
+            to: newCenter?.centerName || center
+        }
+    }
+
+    if (Object.keys(modifiedData).length > 0) {
+        await newLog({
+            user: req.user._id,
+            action: 'updated',
+            module: 'user',
+            modifiedData
+        })
+    }
 
     res.status(200).json({
         success: true,
@@ -261,5 +329,53 @@ export const updateUserDetails = asyncHandler(async (req, res, next) => {
             center: user.center,
             username: user.userName
         }
+    })
+})
+
+
+export const deleteUser = asyncHandler(async (req, res, next) => {
+    const userId = req.params.id
+
+    // Only admin can delete
+    const isAdmin = await User.findOne({
+        _id: req.user._id,
+        role: 'admin',
+        'isDeleted.status': false
+    })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized", 403))
+    }
+
+    const user = await User.findOne({ _id: userId, 'isDeleted.status': false, role: 'staff' })
+
+    if (!user) {
+        return next(new HttpError("User not found", 404))
+    }
+
+    // Soft delete
+    user.isDeleted = {
+        status: true,
+        deletedAt: new Date(),
+        deletedBy: req.user._id
+    }
+
+    await user.save()
+
+    // Log deletion
+    await newLog({
+        user: req.user._id,
+        action: 'deleted',
+        module: 'user',
+        modifiedData: {
+            deletedUserName: user.userName,
+            deletedUserId: user._id,
+            center: user.center
+        }
+    })
+
+    res.status(200).json({
+        success: true,
+        message: 'User deleted successfully'
     })
 })

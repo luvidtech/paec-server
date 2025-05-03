@@ -292,10 +292,16 @@ const baselineFormSchema = new mongoose.Schema({
         },
         mriAbnormality: Boolean
     },
-    staff: {
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
+    updatedBy: [
+        {
+            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            updatedAt: { type: Date, default: Date.now }
+        }
+    ],
     isDeleted: {
         status: { type: Boolean, default: false },
         deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

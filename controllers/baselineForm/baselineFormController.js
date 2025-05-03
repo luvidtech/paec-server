@@ -3,8 +3,9 @@ import FollowupForm from "../../models/followupFormModel.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 import { validationResult } from 'express-validator'
 import HttpError from "../../utils/httpErrorMiddleware.js"
+import newLog from "../../utils/newlog.js"
 
-// Create new baseline form
+// Create Baseline Form
 export const createBaselineForm = asyncHandler(async (req, res) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -20,7 +21,6 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
             return res.status(400).json({ message: 'UHID is required in patientDetails' })
         }
 
-        // Only check if a non-deleted form exists
         const existingForm = await BaselineForm.findOne({
             'patientDetails.uhid': uhid,
             'isDeleted.status': false
@@ -35,13 +35,25 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
 
         const formData = {
             ...req.body,
-            staff: req.user._id,
+            createdBy: req.user._id,
             center: req.user.center
         }
 
-        // Create new form (even if deleted one exists)
         const newForm = new BaselineForm(formData)
         const savedForm = await newForm.save()
+
+        await newLog({
+            user: req.user._id,
+            action: 'created',
+            module: 'baselineform',
+            modifiedData: {
+                uhid: patientDetails.uhid,
+                patientName: patientDetails.name
+            }
+        })
+
+        console.log(newLog)
+
 
         res.status(201).json(savedForm)
     } catch (error) {
@@ -70,6 +82,14 @@ export const getBaselineForm = asyncHandler(async (req, res) => {
         } = req.query
 
         const query = { 'isDeleted.status': false }
+
+        // Access-based filtering
+        const accessTo = req.user.accessTo
+        if (accessTo === 'own') {
+            query['createdBy'] = req.user._id
+        } else if (accessTo === 'center') {
+            query['center'] = req.user.center
+        }
 
         if (sex) query['patientDetails.sex'] = sex
         if (minAge) query['patientDetails.age'] = { $gte: parseInt(minAge) }
@@ -105,20 +125,45 @@ export const getBaselineForm = asyncHandler(async (req, res) => {
 })
 
 
-// Get single patient form by ID
+
 export const getBaselineFormById = asyncHandler(async (req, res) => {
     try {
         const form = await BaselineForm.findById(req.params.id)
+
         if (!form) {
             return res.status(404).json({ message: 'Form not found' })
         }
-        res.json(form)
+
+        // Access control
+        const accessTo = req.user.accessTo
+        const isOwner = form.createdBy.toString() === req.user._id.toString()
+        const isSameCenter = form.center?.toString() === req.user.center?.toString()
+
+        if (
+            accessTo !== 'all' &&
+            !(accessTo === 'own' && isOwner) &&
+            !(accessTo === 'center' && isSameCenter)
+        ) {
+            return res.status(403).json({ message: 'Access denied' })
+        }
+
+        const followupForms = await FollowupForm.find({
+            baselineForm: req.params.id,
+            'isDeleted.status': false
+        }).sort({ visitDate: -1 })
+
+        res.json({
+            baselineForm: form,
+            followups: followupForms
+        })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
 })
 
-// Update patient form
+
+
+// Update Baseline Form
 export const updateBaselineForm = asyncHandler(async (req, res) => {
     try {
         const formId = req.params.id
@@ -127,7 +172,7 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
         // If uhid is being updated, check for conflict
         if (patientDetails?.uhid) {
             const existing = await BaselineForm.findOne({
-                _id: { $ne: formId }, // Exclude the current doc
+                _id: { $ne: formId },
                 'patientDetails.uhid': patientDetails.uhid,
                 'isDeleted.status': false
             })
@@ -140,17 +185,25 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
             }
         }
 
-        const updatedForm = await BaselineForm.findByIdAndUpdate(
-            formId,
-            { $set: req.body },
-            { new: true, runValidators: true }
-        )
+        const form = await BaselineForm.findById(formId)
 
-        if (!updatedForm) {
+        if (!form) {
             return res.status(404).json({ message: 'Form not found' })
         }
 
+        // Push to updatedBy array
+        form.updatedBy.push({
+            user: req.user._id,
+            updatedAt: new Date()
+        })
+
+        // Apply other updates from req.body
+        Object.assign(form, req.body)
+
+        const updatedForm = await form.save()
+
         res.json(updatedForm)
+
     } catch (error) {
         if (error.code === 11000) {
             return res.status(400).json({
@@ -163,20 +216,18 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
 })
 
 
-// Delete patient form
+// Delete Baseline form
 export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
 
     const form = await BaselineForm.findById({ _id: req.params.id, 'isDeleted.status': false })
 
     if (form) {
-        // Mark the baseline form as deleted (soft delete)
         form.isDeleted = {
             status: true,
             deletedBy: req.user ? req.user._id : null,
             deletedTime: Date.now()
         }
 
-        // Find all follow-up forms that reference this baseline form and mark them as deleted
         await FollowupForm.updateMany(
             { baselineForm: req.params.id, 'isDeleted.status': false },
             {
@@ -188,7 +239,6 @@ export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
             }
         )
 
-        // Save the updated baseline form
         await form.save()
 
         res.status(200).json({ message: "Baseline form and related follow-ups deleted" })
