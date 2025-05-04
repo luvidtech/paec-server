@@ -1,11 +1,17 @@
 import BaselineForm from "../../models/baselineFormModel.js"
 import FollowupForm from "../../models/followupFormModel.js"
 import asyncHandler from "../../utils/asyncHandler.js"
+import { getModifiedFields } from "../../utils/diffObject.js"
+import newLog from "../../utils/newlog.js"
 
 
-export const createFollowupForm = async (req, res) => {
+export const createFollowupForm = asyncHandler(async (req, res) => {
     try {
-        const patient = await BaselineForm.findById({ _id: req.body.baselineForm, 'isDeleted.status': false })
+        const patient = await BaselineForm.findById({
+            _id: req.body.baselineForm,
+            'isDeleted.status': false
+        })
+
         if (!patient) {
             return res.status(404).json({ message: 'Baseline record not found' })
         }
@@ -17,7 +23,7 @@ export const createFollowupForm = async (req, res) => {
             })
         }
 
-        // Check if another follow-up exists for this patient on the same currentVisitDate
+        // Check if another follow-up exists for this patient on the same date
         const existingFollowUp = await FollowupForm.findOne({
             baselineForm: req.body.baselineForm,
             'visitDetails.currentVisitDate': req.body.visitDetails.currentVisitDate,
@@ -42,6 +48,16 @@ export const createFollowupForm = async (req, res) => {
         const newFollowUp = new FollowupForm(formData)
         const savedFollowUp = await newFollowUp.save()
 
+        await newLog({
+            user: req.user._id,
+            action: 'created',
+            module: 'followupform',
+            modifiedData: {
+                id: savedFollowUp._id,
+                currentVisitDate: savedFollowUp.visitDetails?.currentVisitDate
+            }
+        })
+
         res.status(201).json(savedFollowUp)
     } catch (error) {
         if (error.code === 11000) {
@@ -51,7 +67,7 @@ export const createFollowupForm = async (req, res) => {
         }
         res.status(400).json({ message: error.message })
     }
-}
+})
 
 
 
@@ -154,7 +170,7 @@ export const getFollowupForm = asyncHandler(async (req, res) => {
 
 
 
-export const getFollowupFormById = async (req, res) => {
+export const getFollowupFormById = asyncHandler(async (req, res) => {
     try {
         const followUp = await FollowupForm.findOne({
             _id: req.params.id,
@@ -186,82 +202,86 @@ export const getFollowupFormById = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
-}
+})
 
 
 
-export const updateFollowupForm = async (req, res) => {
+export const updateFollowupForm = asyncHandler(async (req, res) => {
     try {
-        const baselineForm = await BaselineForm.findById(req.body.baselineForm)
+        const followUp = await FollowupForm.findById(req.params.id)
 
-        if (!baselineForm || baselineForm.isDeleted.status === true) {
-            return res.status(400).json({
-                message: 'Cannot update follow-up: The associated BaselineForm is deleted'
-            })
+        // Check if the follow-up form is deleted
+        if (!followUp || followUp.isDeleted.status === true) {
+            return res.status(400).json({ message: "Followup not found" })
         }
 
-        if (req.body.visitDetails?.currentVisitDate) {
-            const existing = await FollowupForm.findOne({
-                patient: req.body.patient,
-                'visitDetails.currentVisitDate': req.body.visitDetails.currentVisitDate,
-                _id: { $ne: req.params.id }, 'isDeleted.status': false
-            })
-
-            if (existing) {
-                return res.status(409).json({
-                    message: 'Another follow-up exists for this patient on the new date'
-                })
-            }
-        }
-
-        const updatedFollowUp = await FollowupForm.findById(req.params.id)
-
-        if (!updatedFollowUp) {
-            return res.status(404).json({ message: "Follow-up form not found" })
-        }
+        const oldFollowUp = followUp.toObject()
 
         // Push updatedBy info
-        updatedFollowUp.updatedBy.push({
+        followUp.updatedBy.push({
             user: req.user._id,
             updatedAt: new Date()
         })
 
-        // Apply other updates from req.body
-        Object.assign(updatedFollowUp, req.body)
+        // Apply updates from the request body
+        Object.assign(followUp, req.body)
 
-        await updatedFollowUp.save()
+        const savedForm = await followUp.save()
 
-        res.json(updatedFollowUp)
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(409).json({
-                message: 'Date conflict with another follow-up'
+        // Get modified fields
+        const modifiedData = getModifiedFields(oldFollowUp, req.body)
+
+        // Log changes if any modifications
+        if (Object.keys(modifiedData).length > 0) {
+            await newLog({
+                user: req.user._id,
+                action: 'updated',
+                module: 'followupform',
+                modifiedData
             })
         }
+
+        res.json(savedForm)
+    } catch (error) {
         res.status(400).json({ message: error.message })
     }
-}
+})
 
 
 
-export const deleteFollowupForm = async (req, res) => {
+export const deleteFollowupForm = asyncHandler(async (req, res) => {
     try {
-        const followUp = await FollowupForm.findById({ _id: req.params.id, 'isDeleted.status': false })
+        const followUp = await FollowupForm.findById(req.params.id)
 
-        if (!followUp) {
+        if (!followUp || followUp.isDeleted.status === true) {
             return res.status(404).json({ message: 'Follow-up not found' })
         }
 
+        const deletedBy = req.user ? req.user._id : null
+        const deletedTime = Date.now()
+
+        // Mark the follow-up as deleted (soft delete)
         followUp.isDeleted.status = true
-        followUp.isDeleted.deletedBy = req.user ? req.user._id : null
-        followUp.isDeleted.deletedTime = Date.now()
+        followUp.isDeleted.deletedBy = deletedBy
+        followUp.isDeleted.deletedTime = deletedTime
 
         // Save the updated follow-up form
         await followUp.save()
+
+        await newLog({
+            user: deletedBy,
+            action: 'deleted',
+            module: 'followupform',
+            modifiedData: {
+                followUpId: req.params.id,
+                deletedTime
+            }
+        })
 
         res.json({ message: 'Follow-up deleted successfully' })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
-};
+})
+
 

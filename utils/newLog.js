@@ -1,7 +1,7 @@
 import Log from '../models/logModel.js'
 import asyncHandler from './asyncHandler.js'
 
-const newLog = asyncHandler(async ({user, action, module, modifiedData}) => {
+const newLog = asyncHandler(async ({ user, action, module, modifiedData }) => {
     try {
         const logEntry = new Log({
             action,
@@ -9,8 +9,6 @@ const newLog = asyncHandler(async ({user, action, module, modifiedData}) => {
             module,
             modifiedData,
         })
-
-        console.log(logEntry)
 
         await logEntry.save()
     } catch (error) {

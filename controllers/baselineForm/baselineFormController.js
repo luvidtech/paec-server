@@ -52,8 +52,6 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
             }
         })
 
-        console.log(newLog)
-
 
         res.status(201).json(savedForm)
     } catch (error) {
@@ -191,16 +189,45 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
             return res.status(404).json({ message: 'Form not found' })
         }
 
+        // Clone for diff comparison
+        const oldForm = form.toObject()
+
         // Push to updatedBy array
         form.updatedBy.push({
             user: req.user._id,
             updatedAt: new Date()
         })
 
-        // Apply other updates from req.body
+        // Apply updates
         Object.assign(form, req.body)
 
         const updatedForm = await form.save()
+
+        // Prepare modifiedData for logging
+        const modifiedData = {}
+        const oldUHID = oldForm.patientDetails?.uhid
+        const newUHID = req.body.patientDetails?.uhid
+        if (oldUHID && newUHID && oldUHID !== newUHID) {
+            modifiedData.uhid = { from: oldUHID, to: newUHID }
+        }
+
+        const oldName = oldForm.patientDetails?.name
+        const newName = req.body.patientDetails?.name
+        if (oldName && newName && oldName !== newName) {
+            modifiedData.name = { from: oldName, to: newName }
+        }
+
+        // Add other fields to log if needed
+
+        if (Object.keys(modifiedData).length > 0) {
+            await newLog({
+                user: req.user._id,
+                action: 'updated',
+                module: 'baselineform',
+                modifiedData
+            })
+        }
+
 
         res.json(updatedForm)
 
@@ -216,30 +243,46 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
 })
 
 
+
 // Delete Baseline form
 export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
-
     const form = await BaselineForm.findById({ _id: req.params.id, 'isDeleted.status': false })
 
     if (form) {
+        const deletedBy = req.user ? req.user._id : null
+        const deletedTime = Date.now()
+
+        // Mark baseline as deleted
         form.isDeleted = {
             status: true,
-            deletedBy: req.user ? req.user._id : null,
-            deletedTime: Date.now()
+            deletedBy,
+            deletedTime
         }
 
+        // Mark associated follow-ups as deleted
         await FollowupForm.updateMany(
             { baselineForm: req.params.id, 'isDeleted.status': false },
             {
                 $set: {
                     'isDeleted.status': true,
-                    'isDeleted.deletedBy': req.user ? req.user._id : null,
-                    'isDeleted.deletedTime': Date.now()
+                    'isDeleted.deletedBy': deletedBy,
+                    'isDeleted.deletedTime': deletedTime
                 }
             }
         )
 
         await form.save()
+
+        await newLog({
+            user: deletedBy,
+            action: 'deleted',
+            module: 'baselineform',
+            modifiedData: {
+                baselineFormId: req.params.id,
+                deletedFollowups: true,
+                deletedTime
+            }
+        })
 
         res.status(200).json({ message: "Baseline form and related follow-ups deleted" })
     } else {
