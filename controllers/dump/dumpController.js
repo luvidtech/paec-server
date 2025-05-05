@@ -20,7 +20,10 @@ export const generateDump = asyncHandler(async (req, res, next) => {
     const zipFileName = `ghd-dump-${timestamp}.zip`
     const zipFilePath = path.join(uploadsDir, zipFileName)
 
-    const dumpCommand = `"C:\\Program Files\\MongoDB\\Server\\7.0\\bin\\mongodump.exe" --uri="mongodb://127.0.0.1:27017/ghd" --out="${dumpDir}"`
+    const mongoDumpPath = process.env.MONGO_DUMP_PATH || "mongodump"
+    const mongoUri = process.env.MONGO_URI
+
+    const dumpCommand = `"${mongoDumpPath}" --uri="${mongoUri}" --out="${dumpDir}"`
 
     exec(dumpCommand, (error, stdout, stderr) => {
         if (error) {
@@ -84,5 +87,33 @@ export const generateDump = asyncHandler(async (req, res, next) => {
         archive.pipe(output)
         archive.directory(ghdDir, "ghd")
         archive.finalize()
+    })
+})
+
+
+export const getDump = asyncHandler(async (req, res) => {
+
+    const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized ", 403))
+    }
+
+    const uploadsDir = path.join(__dirname, "../../uploads")
+
+    fs.readdir(uploadsDir, (err, files) => {
+        if (err) return res.status(500).json({ error: "Failed to read upload directory" })
+
+        const zipFiles = files
+            .filter(file => file.startsWith("ghd-dump-") && file.endsWith(".zip"))
+            .map(file => ({
+                name: file,
+                time: fs.statSync(path.join(uploadsDir, file)).mtime.getTime(),
+                url: `/uploads/${file}`
+            }))
+            .sort((a, b) => b.time - a.time)
+            .slice(0, 3)
+
+        res.json(zipFiles)
     })
 })

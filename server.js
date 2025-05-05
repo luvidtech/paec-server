@@ -17,6 +17,7 @@ import centerRoutes from './routes/center/centerRoutes.js'
 import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
 import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
 import dumpRoutes from './routes/dump/dumpRoutes.js'
+import logsRoutes from './routes/logs/logsRoutes.js'
 
 
 import User from './models/userModel.js'
@@ -90,6 +91,7 @@ app.use('/api/center', centerRoutes)
 app.use('/api/baseline', baselineFormRoutes)
 app.use('/api/followup', followupFormRoutes)
 app.use('/api/dump', dumpRoutes)
+app.use('/api/logs', logsRoutes)
 
 
 // Serve static files
