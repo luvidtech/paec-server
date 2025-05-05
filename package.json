@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js"
+    "server": "nodemon --ignore uploads/ --ignore uploads/db-dump/ server.js"
   },
   "author": "Basil Jiji",
   "license": "MIT",

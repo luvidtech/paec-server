@@ -1,0 +1,9 @@
+{
+    "ignore": [
+        "uploads",
+        "uploads/**",
+        "uploads/db-dump/**"
+    ],
+    "ext": "js,json",
+    "exec": "node server.js"
+}

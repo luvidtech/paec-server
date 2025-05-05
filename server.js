@@ -16,6 +16,7 @@ import userRoutes from './routes/auth/userRoutes.js'
 import centerRoutes from './routes/center/centerRoutes.js'
 import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
 import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
+import dumpRoutes from './routes/dump/dumpRoutes.js'
 
 
 import User from './models/userModel.js'
@@ -59,7 +60,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(new URL(import.meta.url).pathname, './uploads')))
 const publicPath = path.join(__dirname, './uploads')
-app.use(express.static(publicPath))
+// app.use(express.static(publicPath))
 
 
 app.use(passport.initialize())
@@ -88,6 +89,7 @@ app.use('/api/auth', userRoutes)
 app.use('/api/center', centerRoutes)
 app.use('/api/baseline', baselineFormRoutes)
 app.use('/api/followup', followupFormRoutes)
+app.use('/api/dump', dumpRoutes)
 
 
 // Serve static files
