@@ -4,6 +4,7 @@ import fs from "fs"
 import archiver from "archiver"
 import path from "path"
 import { fileURLToPath } from "url"
+import User from "../../models/userModel.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -109,11 +110,34 @@ export const getDump = asyncHandler(async (req, res) => {
             .map(file => ({
                 name: file,
                 time: fs.statSync(path.join(uploadsDir, file)).mtime.getTime(),
-                url: `/uploads/${file}`
+                url: `/api/dumps/download/${file}`
             }))
             .sort((a, b) => b.time - a.time)
             .slice(0, 3)
 
         res.json(zipFiles)
+    })
+})
+
+
+export const downloadDump = asyncHandler(async (req, res, next) => {
+    const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
+
+    if (!isAdmin) {
+        return next(new HttpError("You are not authorized", 403))
+    }
+
+    const fileName = req.params.file
+    const filePath = path.join(__dirname, "../../uploads", fileName)
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" })
+    }
+
+    res.download(filePath, fileName, (err) => {
+        if (err) {
+            console.error(err)
+            return res.status(500).json({ message: "Failed to download file" })
+        }
     })
 })
