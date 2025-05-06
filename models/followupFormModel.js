@@ -18,7 +18,7 @@ const followupFormSchema = new mongoose.Schema({
             currentDose: Number, // units per day
             brand: String,
             administrationMethod: String, // "Pen" or "Syringe"
-            syringeUsage: Number, // 1-7 or >7 injections per syringe
+            syringeUsage: String, // 1-7 or >7 injections per syringe
             costCoverage: String // "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
         }
     },
