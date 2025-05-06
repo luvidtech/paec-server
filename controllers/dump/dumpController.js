@@ -110,7 +110,7 @@ export const getDump = asyncHandler(async (req, res) => {
             .map(file => ({
                 name: file,
                 time: fs.statSync(path.join(uploadsDir, file)).mtime.getTime(),
-                url: `/api/dumps/download/${file}`
+                url: `${file}`
             }))
             .sort((a, b) => b.time - a.time)
             .slice(0, 3)
