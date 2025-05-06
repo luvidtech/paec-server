@@ -296,6 +296,13 @@ const baselineFormSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    remarks: {
+        type: String
+    },
     updatedBy: [
         {
             user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
