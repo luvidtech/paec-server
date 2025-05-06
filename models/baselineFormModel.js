@@ -118,7 +118,7 @@ const baselineFormSchema = new mongoose.Schema({
         },
         pituitaryRadiation: {
             history: Boolean,
-            type: String, // "Gamma knife", "conventional"
+            pituitaryRadiationType: String, // "Gamma knife", "conventional"
             startDate: Date,
             endDate: Date,
             totalDose: Number,
@@ -193,7 +193,7 @@ const baselineFormSchema = new mongoose.Schema({
             testosterone: Number
         },
         ghStimulationTest: {
-            type: String, // "Clonidine", "Glucagon"
+            ghStimulationType: String, // "Clonidine", "Glucagon"
             date: Date,
             place: String, // "AIIMS", "Outside"
             outsidePlace: String,
@@ -281,7 +281,7 @@ const baselineFormSchema = new mongoose.Schema({
     },
 
     diagnosis: {
-        type: String, // "Congenital", "Acquired"
+        diagnosisType: String, // "Congenital", "Acquired"
         isolatedGHD: Boolean,
         hypopituitarism: Boolean,
         affectedAxes: {

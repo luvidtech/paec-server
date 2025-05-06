@@ -103,7 +103,7 @@ const followupFormSchema = new mongoose.Schema({
                 dose: Number, // ug/day
             },
             corticosteroids: {
-                whichtype: String, // "Prednisone" or "HC"
+                corticosteroidsType: String, // "Prednisone" or "HC"
                 dose: Number, // mg/day
                 frequency: String // "Single dose" or "two doses"
             },
