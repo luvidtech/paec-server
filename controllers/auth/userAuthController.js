@@ -7,7 +7,7 @@ import newLog from "../../utils/newlog.js"
 import Center from "../../models/centreModel.js"
 
 export const registerUser = asyncHandler(async (req, res, next) => {
-    const { loginId, password, userName, accessTo, center } = req.body
+    const { loginId, password, userName, accessTo, center,phone } = req.body
 
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
@@ -51,7 +51,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
                 role: 'staff',
                 isActive: true,
                 accessTo,
-                center
+                center,phone
             })
 
             const populatedUser = await user.populate('center', 'centerName')
