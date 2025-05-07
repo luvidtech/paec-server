@@ -20,10 +20,11 @@ export const getLogs = asyncHandler(async (req, res) => {
     const total = await Log.countDocuments(filter)
 
     const logs = await Log.find(filter)
-        .populate('user', 'username')
+        .populate('user', 'userName')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
+
 
     res.json({
         success: true,
