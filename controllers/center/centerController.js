@@ -2,7 +2,7 @@ import Center from '../../models/centreModel.js'
 import User from '../../models/userModel.js'
 import asyncHandler from '../../utils/asyncHandler.js'
 import HttpError from '../../utils/httpErrorMiddleware.js'
-import newLog from '../../utils/newlog.js'
+import newLog from '../../utils/newLog.js'
 
 
 // Create Center

@@ -3,7 +3,7 @@ import FollowupForm from "../../models/followupFormModel.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 import { validationResult } from 'express-validator'
 import HttpError from "../../utils/httpErrorMiddleware.js"
-import newLog from "../../utils/newlog.js"
+import newLog from "../../utils/newLog.js"
 
 // Create Baseline Form
 export const createBaselineForm = asyncHandler(async (req, res) => {

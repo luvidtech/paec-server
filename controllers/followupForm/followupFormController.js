@@ -2,7 +2,7 @@ import BaselineForm from "../../models/baselineFormModel.js"
 import FollowupForm from "../../models/followupFormModel.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 import { getModifiedFields } from "../../utils/diffObject.js"
-import newLog from "../../utils/newlog.js"
+import newLog from "../../utils/newLog.js"
 
 
 export const createFollowupForm = asyncHandler(async (req, res) => {
