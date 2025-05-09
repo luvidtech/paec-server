@@ -3,7 +3,7 @@ import { generateToken } from "../../utils/generateToken.js"
 import HttpError from "../../utils/httpErrorMiddleware.js"
 import asyncHandler from "../../utils/asyncHandler.js"
 import { sendOtpEmail } from "../../utils/mailer.js"
-import newLog from "../../utils/newlog.js"
+import newLog from "../../utils/newLog.js"
 import Center from "../../models/centreModel.js"
 
 export const registerUser = asyncHandler(async (req, res, next) => {
