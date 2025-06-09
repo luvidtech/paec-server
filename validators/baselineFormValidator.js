@@ -22,7 +22,6 @@ export const validateBaselineForm = [
     body('history.birthHistory.deliveryNature').notEmpty().withMessage('Delivery nature is required'),
     body('history.birthHistory.birthWeight').isNumeric().withMessage('Birth weight must be a number'),
     body('history.birthHistory.birthLength').isNumeric().withMessage('Birth length must be a number'),
-    body('history.birthHistory.birthHypoxia').isBoolean().withMessage('Birth hypoxia must be true or false'),
 
     // Optional: You can keep adding validations for deeper levels (like pubertyHistory, familyHistory, etc.)
 ]

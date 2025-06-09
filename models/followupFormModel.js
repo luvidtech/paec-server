@@ -13,7 +13,7 @@ const followupFormSchema = new mongoose.Schema({
         }
     },
     ghTherapy: {
-        takingGH: Boolean,
+        takingGH: String,
         details: {
             currentDose: Number, // units per day
             brand: String,
@@ -42,7 +42,7 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     compliance: {
-        missedDoses: Boolean,
+        missedDoses: String,
         details: {
             daysMissedPerMonth: Number,
             daysMissedLast3Months: Number,
@@ -54,18 +54,18 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     sideEffects: {
-        present: Boolean,
+        present: String,
         effects: {
-            edemaFeet: Boolean,
-            headache: Boolean,
-            gynecomastia: Boolean,
-            blurringVision: Boolean,
-            hipJointPain: Boolean
+            edemaFeet: String,
+            headache: String,
+            gynecomastia: String,
+            blurringVision: String,
+            hipJointPain: String
         }
     },
 
     associatedIllness: {
-        present: Boolean,
+        present: String,
         details: String,
         otherComplaints: String
     },

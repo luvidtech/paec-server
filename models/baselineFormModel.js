@@ -40,7 +40,7 @@ const baselineFormSchema = new mongoose.Schema({
             deliveryNature: String, // "normal", "breech", "forceps", "LSCS"
             birthWeight: Number,
             birthLength: Number,
-            birthHypoxia: Boolean
+            birthHypoxia: String
         },
         pubertyHistory: {
             thelarche: {
@@ -56,12 +56,12 @@ const baselineFormSchema = new mongoose.Schema({
             father: {
                 age: Number,
                 height: Number,
-                isMeasured: Boolean
+                isMeasured: String
             },
             mother: {
                 age: Number,
                 height: Number,
-                isMeasured: Boolean
+                isMeasured: String
             },
             mph: Number,
             mphSds: Number,
@@ -71,9 +71,9 @@ const baselineFormSchema = new mongoose.Schema({
                 height: Number,
                 weight: Number
             }],
-            shortStatureInFamily: Boolean,
+            shortStatureInFamily: String,
             consanguinity: {
-                present: Boolean,
+                present: String,
                 degree: String // "1", "2", "3", "others"
             }
         }
@@ -105,7 +105,7 @@ const baselineFormSchema = new mongoose.Schema({
             spl: String
         },
         pituitarySurgery: {
-            history: Boolean,
+            history: String,
             details: {
                 diagnosisDate: Date,
                 ctDate: Date,
@@ -117,7 +117,7 @@ const baselineFormSchema = new mongoose.Schema({
             }
         },
         pituitaryRadiation: {
-            history: Boolean,
+            history: String,
             pituitaryRadiationType: String, // "Gamma knife", "conventional"
             startDate: Date,
             endDate: Date,
@@ -158,8 +158,8 @@ const baselineFormSchema = new mongoose.Schema({
         },
         urine: {
             lowestPh: Number,
-            albumin: Boolean,
-            glucose: Boolean,
+            albumin: String,
+            glucose: String,
             microscopy: String
         },
         sttg: {
@@ -202,7 +202,7 @@ const baselineFormSchema = new mongoose.Schema({
                 clonidineGH: Number,
                 glucagonGH: Number
             }],
-            testsDone: Number, // 1 or 2
+            testsDone: String, // 1 or 2
             singleTestType: String, // if testsDone=1
             peakGHLevel: String, // "<10", "<7", "<5"
             exactPeakGH: Number,
@@ -211,18 +211,18 @@ const baselineFormSchema = new mongoose.Schema({
     },
 
     mri: {
-        performed: Boolean,
+        performed: String,
         date: Date,
-        contrastUsed: Boolean,
-        coronalSagittalCuts: Boolean,
+        contrastUsed: String,
+        coronalSagittalCuts: String,
         place: String, // "AIIMS", "outside"
-        filmsAvailable: Boolean,
-        cdAvailable: Boolean,
-        scanned: Boolean,
+        filmsAvailable: String,
+        cdAvailable: String,
+        scanned: String,
         findings: {
-            anteriorPituitaryHypoplasia: Boolean,
-            pituitaryStalkInterruption: Boolean,
-            ectopicPosteriorPituitary: Boolean,
+            anteriorPituitaryHypoplasia: String,
+            pituitaryStalkInterruption: String,
+            ectopicPosteriorPituitary: String,
             pituitarySizeMM: Number,
             otherFindings: String
         }
@@ -230,18 +230,18 @@ const baselineFormSchema = new mongoose.Schema({
 
     treatment: {
         hypothyroidism: {
-            present: Boolean,
+            present: String,
             diagnosisDate: Date,
             treatmentStartDate: Date,
             currentDose: String,
-            doseChanged: Boolean,
+            doseChanged: String,
             lastT4: Number,
             source: String // "purchased", "hospital supply"
         },
         hypocortisolism: {
-            present: Boolean,
+            present: String,
             diagnosisDate: Date,
-            acthStimTest: Boolean,
+            acthStimTest: String,
             testDate: Date,
             peakCortisol: Number,
             treatmentStartDate: Date,
@@ -249,25 +249,25 @@ const baselineFormSchema = new mongoose.Schema({
             currentDose: String,
             frequency: String, // "OD", "BD", "TDS"
             dailyDoseMG: Number,
-            doseChanged: Boolean,
+            doseChanged: String,
             source: String // "purchased", "hospital supply"
         },
         di: {
-            present: Boolean,
+            present: String,
             diagnosisDate: Date,
-            minirin: Boolean,
+            minirin: String,
             dose: String, // "half", "full", "double"
             frequency: Number // 1, 2, 3
         },
         hypogonadism: {
-            present: Boolean,
+            present: String,
             diagnosisDate: Date,
             treatmentStartDate: Date,
             fullAdultDoseDate: Date,
             hormoneType: String, // "Testosterone", "estradiol"
             mpaStartDate: Date,
             currentDose: String,
-            doseChanged: Boolean
+            doseChanged: String
         },
         supplements: {
             calcium: Boolean,
@@ -282,15 +282,15 @@ const baselineFormSchema = new mongoose.Schema({
 
     diagnosis: {
         diagnosisType: String, // "Congenital", "Acquired"
-        isolatedGHD: Boolean,
-        hypopituitarism: Boolean,
+        isolatedGHD: String,
+        hypopituitarism: String,
         affectedAxes: {
-            thyroid: Boolean,
-            cortisol: Boolean,
-            gonadal: Boolean,
-            di: Boolean
+            thyroid: String,
+            cortisol: String,
+            gonadal: String,
+            di: String
         },
-        mriAbnormality: Boolean
+        mriAbnormality: String
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
