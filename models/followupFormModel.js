@@ -20,7 +20,8 @@ const followupFormSchema = new mongoose.Schema({
             administrationMethod: String, // "Pen" or "Syringe"
             syringeUsage: String, // 1-7 or >7 injections per syringe
             costCoverage: String // "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
-        }
+        },
+        remarks: String,
     },
 
     measurements: {
@@ -29,7 +30,8 @@ const followupFormSchema = new mongoose.Schema({
         bmi: Number,
         heightSds: Number,
         weightSds: Number,
-        bmiSds: Number
+        bmiSds: Number,
+        remarks: String
     },
 
     pubertalStatus: {
@@ -38,7 +40,9 @@ const followupFormSchema = new mongoose.Schema({
             left: Number // ml
         },
         pubicHair: String, // "1", "2", "3", "4", "5"
-        breastStage: String // "B1", "B2", "B3", "B4", "B5"
+        breastStage: String ,
+        // "B1", "B2", "B3", "B4", "B5"
+        remarks: String,
     },
 
     compliance: {
@@ -50,7 +54,8 @@ const followupFormSchema = new mongoose.Schema({
             daysMissedPerWeek: Number,
             totalDaysMissedSinceLastVisit: Number,
             reasons: String
-        }
+        },
+        remarks: String,
     },
 
     sideEffects: {
@@ -61,18 +66,21 @@ const followupFormSchema = new mongoose.Schema({
             gynecomastia: String,
             blurringVision: String,
             hipJointPain: String
-        }
+        },
+        remarks: String,
     },
 
     associatedIllness: {
         present: String,
         details: String,
-        otherComplaints: String
+        otherComplaints: String,
+        remarks: String,
     },
 
     growthVelocity: {
         last6Months: Number,
-        sinceGHStart: Number
+        sinceGHStart: Number,
+        remarks: String,
     },
 
     investigations: {
@@ -88,7 +96,8 @@ const followupFormSchema = new mongoose.Schema({
                 value: Number, // mg/dl
                 date: Date
             }
-        }
+        },
+        remarks: String,
     },
 
     advisedTreatment: {
@@ -116,9 +125,12 @@ const followupFormSchema = new mongoose.Schema({
             },
             pragynova: {
                 dose: Number // mg/day
-            }
-        }
+            },
+           
+        },
+         remarks: String,
     },
+     remarks: String,
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
