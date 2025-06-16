@@ -149,12 +149,23 @@ const baselineFormSchema = new mongoose.Schema({
             sgot: Number,
             sgpt: Number,
             sAlbumin: Number,
+            sGlob:Number,
             sCa: Number,
             sPO4: Number,
             sap: Number,
             sNa: Number,
             sK: Number,
-            fbs: Number
+            fbs: Number,
+            egfr: Number,
+remarks: String,
+lipidProfile: {
+  
+  tc: Number,
+  tg: Number,
+  ldl: Number,
+  hdl: Number,
+  hba1c: Number
+}
         },
         urine: {
             lowestPh: Number,
@@ -292,6 +303,39 @@ const baselineFormSchema = new mongoose.Schema({
         },
         mriAbnormality: String
     },
+    
+    remarks: {
+      birthHistory: String,
+      pubertyHistory: String,
+      familyHistory: String,
+      measurements: String,
+      physicalFindings: String,
+      pituitarySurgeryHistory: String,
+      pituitaryRadiation: String,
+      investigations: {
+        hematology: String,
+        dlc: String,
+        pbf: String,
+        biochemistry: String,
+        urine: String,
+        sttg: String,
+        imaging: String,
+        tests: String,
+        ghStimulationTest: String,
+        testResults: String,
+        
+        mriFindings: String
+      },
+      diagnosis: {
+        hypothyroidism: String,
+        hypocortisolism: String,
+        diabetesInsipidus: String,
+        hypogonadism: String,
+        otherTreatments: String,
+        affectedAxis: String
+      }
+    },
+    historyOfCurrentIllness: String,
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -300,9 +344,7 @@ const baselineFormSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    remarks: {
-        type: String
-    },
+   
     updatedBy: [
         {
             user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
