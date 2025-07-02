@@ -38,38 +38,38 @@ const baselineFormSchema = new mongoose.Schema({
             duration: String, // "fullterm", "preterm", "post term"
             deliveryPlace: String, // "home", "nursing home", "govt hospital", etc.
             deliveryNature: String, // "normal", "breech", "forceps", "LSCS"
-            birthWeight: Number,
-            birthLength: Number,
+            birthWeight: String,
+            birthLength: String,
             birthHypoxia: String
         },
         pubertyHistory: {
             thelarche: {
-                ageYears: Number,
-                ageMonths: Number
+                ageYears: String,
+                ageMonths: String
             },
             menarche: {
-                ageYears: Number,
-                ageMonths: Number
+                ageYears: String,
+                ageMonths: String
             }
         },
         familyHistory: {
             father: {
-                age: Number,
-                height: Number,
+                age: String,
+                height: String,
                 isMeasured: String
             },
             mother: {
-                age: Number,
-                height: Number,
+                age: String,
+                height: String,
                 isMeasured: String
             },
             mph: Number,
             mphSds: Number,
             siblings: [{
                 relation: String,
-                age: Number,
-                height: Number,
-                weight: Number
+                age: String,
+                height: String,
+                weight: String
             }],
             shortStatureInFamily: String,
             consanguinity: {
@@ -82,12 +82,12 @@ const baselineFormSchema = new mongoose.Schema({
     examination: {
         date: Date,
         measurements: {
-            height: Number,
-            heightAge: Number,
-            heightSds: Number,
-            weight: Number,
-            weightAge: Number,
-            weightSds: Number,
+            height: String,
+            heightAge: String,
+            heightSds: String,
+            weight: String,
+            weightAge: String,
+            weightSds: String,
             bmi: Number,
             bmiSds: Number
         },
@@ -109,7 +109,7 @@ const baselineFormSchema = new mongoose.Schema({
             details: {
                 diagnosisDate: Date,
                 ctDate: Date,
-                numberOfSurgeries: Number,
+                numberOfSurgeries: String,
                 surgeryType: String, // "TNTS", "Transcranial"
                 surgeryDates: [Date],
                 place: String,
@@ -121,7 +121,7 @@ const baselineFormSchema = new mongoose.Schema({
             pituitaryRadiationType: String, // "Gamma knife", "conventional"
             startDate: Date,
             endDate: Date,
-            totalDose: Number,
+            totalDose: String,
             lastDate: Date
         }
     },
@@ -129,15 +129,15 @@ const baselineFormSchema = new mongoose.Schema({
     investigations: {
         date: Date,
         hematology: {
-            hb: Number,
-            esr: Number,
-            tlc: Number,
+            hb: String,
+            esr: String,
+            tlc:String ,
             dlc: {
-                p: Number,
-                l: Number,
-                e: Number,
-                m: Number,
-                b: Number
+                p: String,
+                l: String,
+                e: String,
+                m: String,
+                b: String
             },
             pbf: {
                 cytic: String, // "normo", "hypo", "megaloblastic"
@@ -145,30 +145,31 @@ const baselineFormSchema = new mongoose.Schema({
             }
         },
         biochemistry: {
-            sCreat: Number,
-            sgot: Number,
-            sgpt: Number,
-            sAlbumin: Number,
-            sGlob:Number,
-            sCa: Number,
-            sPO4: Number,
-            sap: Number,
-            sNa: Number,
-            sK: Number,
-            fbs: Number,
+            sCreat: String,
+            sgot: String,
+            sgpt: String,
+            sAlbumin: String,
+            sGlob:String,
+            sCa: String,
+            sPO4: String,
+            sap: String,
+            sNa: String,
+            sK: String,
+            fbs: String,
             egfr: Number,
+             hba1c: String,
 remarks: String,
 lipidProfile: {
   
-  tc: Number,
-  tg: Number,
-  ldl: Number,
-  hdl: Number,
-  hba1c: Number
+  tc: String,
+  tg: String,
+  ldl: String,
+  hdl: String,
+ 
 }
         },
         urine: {
-            lowestPh: Number,
+            lowestPh: String,
             albumin: String,
             glucose: String,
             microscopy: String
@@ -191,17 +192,17 @@ lipidProfile: {
     endocrineWorkup: {
         date: Date,
         tests: {
-            t4: Number,
-            freeT4: Number,
-            tsh: Number,
-            lh: Number,
-            fsh: Number,
-            prl: Number,
-            acth: Number,
-            cortisol8am: Number,
-            igf1: Number,
-            estradiol: Number,
-            testosterone: Number
+            t4: String,
+            freeT4: String,
+            tsh: String,
+            lh: String,
+            fsh: String,
+            prl: String,
+            acth: String,
+            cortisol8am: String,
+            igf1: String,
+            estradiol: String,
+            testosterone: String
         },
         ghStimulationTest: {
             ghStimulationType: String, // "Clonidine", "Glucagon"
@@ -210,13 +211,13 @@ lipidProfile: {
             outsidePlace: String,
             results: [{
                 time: String, // "0 min", "30 min", etc.
-                clonidineGH: Number,
-                glucagonGH: Number
+                clonidineGH: String,
+                glucagonGH: String
             }],
             testsDone: String, // 1 or 2
             singleTestType: String, // if testsDone=1
             peakGHLevel: String, // "<10", "<7", "<5"
-            exactPeakGH: Number,
+            exactPeakGH: String,
             peakGHTime: String
         }
     },
@@ -234,7 +235,7 @@ lipidProfile: {
             anteriorPituitaryHypoplasia: String,
             pituitaryStalkInterruption: String,
             ectopicPosteriorPituitary: String,
-            pituitarySizeMM: Number,
+            pituitarySizeMM: String,
             otherFindings: String
         }
     },
@@ -246,7 +247,7 @@ lipidProfile: {
             treatmentStartDate: Date,
             currentDose: String,
             doseChanged: String,
-            lastT4: Number,
+            lastT4: String,
             source: String // "purchased", "hospital supply"
         },
         hypocortisolism: {
@@ -254,12 +255,12 @@ lipidProfile: {
             diagnosisDate: Date,
             acthStimTest: String,
             testDate: Date,
-            peakCortisol: Number,
+            peakCortisol: String,
             treatmentStartDate: Date,
             steroidType: String, // "Prednisolone", "hydrocortisone"
             currentDose: String,
             frequency: String, // "OD", "BD", "TDS"
-            dailyDoseMG: Number,
+            dailyDoseMG: String,
             doseChanged: String,
             source: String // "purchased", "hospital supply"
         },
@@ -268,7 +269,7 @@ lipidProfile: {
             diagnosisDate: Date,
             minirin: String,
             dose: String, // "half", "full", "double"
-            frequency: Number // 1, 2, 3
+            frequency: String // 1, 2, 3
         },
         hypogonadism: {
             present: String,
