@@ -6,6 +6,7 @@ const followupFormSchema = new mongoose.Schema({
         ref: "BaselineForm",
     },
     visitDetails: {
+        // visitDetailsPresent:Boolean,
         lastVisitDate: Date,
         currentVisitDate: {
             type: Date,
@@ -13,7 +14,7 @@ const followupFormSchema = new mongoose.Schema({
         }
     },
     ghTherapy: {
-        takingGH: String,
+        ghTherapyPresent: Boolean,
         details: {
             currentDose: String, // units per day
             brand: String,
@@ -25,6 +26,7 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     measurements: {
+         measurementsPresent: Boolean,
         height: String, // cms
         weight: String, // kgs
         bmi: String,
@@ -35,6 +37,7 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     pubertalStatus: {
+         pubertalStatusPresent: Boolean,
         testicularVolume: {
             right: String, // ml
             left: String // ml
@@ -46,6 +49,8 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     compliance: {
+              compliancePresent: Boolean,
+
         missedDoses: String,
         details: {
             daysMissedPerMonth: String,
@@ -59,7 +64,8 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     sideEffects: {
-        present: String,
+              sideEffectsPresent: Boolean,
+
         effects: {
             edemaFeet: String,
             headache: String,
@@ -71,19 +77,21 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     associatedIllness: {
-        present: String,
+      associatedIllnessPresent: Boolean,
         details: String,
         otherComplaints: String,
         remarks: String,
     },
 
     growthVelocity: {
+        growthVelocityPresent: Boolean,
         last6Months: String,
         sinceGHStart: String,
         remarks: String,
     },
 
     investigations: {
+         investigationsPresent: Boolean,
         boneAge: {
             lastXRayDate: Date
         },
@@ -101,6 +109,7 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     advisedTreatment: {
+        advisedTreatmentPresent: Boolean,
         ghDoseCalculation: {
             currentWeight: String, // kg
             mgPerKgPerWeek: String,
