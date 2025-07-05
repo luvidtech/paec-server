@@ -15,21 +15,21 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
     try {
         const { patientDetails } = req.body
 
-        const uhid = patientDetails?.uhid
+        const paecNo = patientDetails?.paecNo
 
-        if (!uhid) {
-            return res.status(400).json({ message: 'UHID is required in patientDetails' })
+        if (!paecNo) {
+            return res.status(400).json({ message: 'paecNo is required in patientDetails' })
         }
 
         const existingForm = await BaselineForm.findOne({
-            'patientDetails.uhid': uhid,
+            'patientDetails.paecNo': paecNo,
             'isDeleted.status': false
         })
 
         if (existingForm) {
             return res.status(400).json({
                 message: 'File already exists',
-                field: { 'patientDetails.uhid': uhid }
+                field: { 'patientDetails.paecNo': paecNo }
             })
         }
 
@@ -47,7 +47,7 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
             action: 'created',
             module: 'baselineform',
             modifiedData: {
-                uhid: patientDetails.uhid,
+                paecNo: patientDetails.paecNo,
                 patientName: patientDetails.name
             }
         })
@@ -70,14 +70,15 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
 export const getBaselineForm = asyncHandler(async (req, res) => {
     try {
         const {
-            page = 1,
-            limit = 10,
+            page,
+            limit,
             sex,
             minAge,
             uhid,
             name,
             visitDate
         } = req.query
+
 
         const query = { 'isDeleted.status': false }
 

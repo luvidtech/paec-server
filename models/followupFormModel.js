@@ -15,7 +15,7 @@ const followupFormSchema = new mongoose.Schema({
     ghTherapy: {
         takingGH: String,
         details: {
-            currentDose: Number, // units per day
+            currentDose: String, // units per day
             brand: String,
             administrationMethod: String, // "Pen" or "Syringe"
             syringeUsage: String, // 1-7 or >7 injections per syringe
@@ -25,19 +25,19 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     measurements: {
-        height: Number, // cms
-        weight: Number, // kgs
-        bmi: Number,
-        heightSds: Number,
-        weightSds: Number,
-        bmiSds: Number,
+        height: String, // cms
+        weight: String, // kgs
+        bmi: String,
+        heightSds: String,
+        weightSds: String,
+        bmiSds: String,
         remarks: String
     },
 
     pubertalStatus: {
         testicularVolume: {
-            right: Number, // ml
-            left: Number // ml
+            right: String, // ml
+            left: String // ml
         },
         pubicHair: String, // "1", "2", "3", "4", "5"
         breastStage: String ,
@@ -48,11 +48,11 @@ const followupFormSchema = new mongoose.Schema({
     compliance: {
         missedDoses: String,
         details: {
-            daysMissedPerMonth: Number,
-            daysMissedLast3Months: Number,
+            daysMissedPerMonth: String,
+            daysMissedLast3Months: String,
             lastPAECVisit: Date,
-            daysMissedPerWeek: Number,
-            totalDaysMissedSinceLastVisit: Number,
+            daysMissedPerWeek: String,
+            totalDaysMissedSinceLastVisit: String,
             reasons: String
         },
         remarks: String,
@@ -78,8 +78,8 @@ const followupFormSchema = new mongoose.Schema({
     },
 
     growthVelocity: {
-        last6Months: Number,
-        sinceGHStart: Number,
+        last6Months: String,
+        sinceGHStart: String,
         remarks: String,
     },
 
@@ -89,11 +89,11 @@ const followupFormSchema = new mongoose.Schema({
         },
         labTests: {
             serumT4: {
-                value: Number, // ug/dl
+                value: String, // ug/dl
                 date: Date
             },
             igf1: {
-                value: Number, // mg/dl
+                value: String, // mg/dl
                 date: Date
             }
         },
@@ -102,29 +102,29 @@ const followupFormSchema = new mongoose.Schema({
 
     advisedTreatment: {
         ghDoseCalculation: {
-            currentWeight: Number, // kg
-            mgPerKgPerWeek: Number,
-            calculatedDose: Number, // units/day
-            roundedDose: Number
+            currentWeight: String, // kg
+            mgPerKgPerWeek: String,
+            calculatedDose: String, // units/day
+            roundedDose: String
         },
         accompanyingTreatments: {
             thyroxin: {
-                dose: Number, // ug/day
+                dose: String, // ug/day
             },
             corticosteroids: {
                 corticosteroidsType: String, // "Prednisone" or "HC"
-                dose: Number, // mg/day
+                dose: String, // mg/day
                 frequency: String // "Single dose" or "two doses"
             },
             minirin: {
-                dose: Number // mg/day
+                dose: String // mg/day
             },
             testosterone: {
-                dose: Number, // mg
-                frequency: Number // weeks between injections
+                dose: String, // mg
+                frequency: String // weeks between injections
             },
             pragynova: {
-                dose: Number // mg/day
+                dose: String // mg/day
             },
            
         },

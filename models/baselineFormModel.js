@@ -6,7 +6,11 @@ const baselineFormSchema = new mongoose.Schema({
         ref: "Center",
     },
     patientDetails: {
-        paecNo: String,
+        paecNo: {
+            type:String,
+            unique: true
+        },
+       
         uhid: {
             type: String
         },
@@ -35,6 +39,7 @@ const baselineFormSchema = new mongoose.Schema({
     history: {
         shortStatureNoticedAt: String,
         birthHistory: {
+            birthHistoryPresent:Boolean,
             duration: String, // "fullterm", "preterm", "post term"
             deliveryPlace: String, // "home", "nursing home", "govt hospital", etc.
             deliveryNature: String, // "normal", "breech", "forceps", "LSCS"
@@ -43,6 +48,7 @@ const baselineFormSchema = new mongoose.Schema({
             birthHypoxia: String
         },
         pubertyHistory: {
+            pubertyHistoryPresent:Boolean,
             thelarche: {
                 ageYears: String,
                 ageMonths: String
@@ -53,6 +59,7 @@ const baselineFormSchema = new mongoose.Schema({
             }
         },
         familyHistory: {
+            familyHistoryPresent: Boolean,
             father: {
                 age: String,
                 height: String,
@@ -63,8 +70,8 @@ const baselineFormSchema = new mongoose.Schema({
                 height: String,
                 isMeasured: String
             },
-            mph: Number,
-            mphSds: Number,
+            mph: String,
+            mphSds: String,
             siblings: [{
                 relation: String,
                 age: String,
@@ -80,18 +87,21 @@ const baselineFormSchema = new mongoose.Schema({
     },
 
     examination: {
+        examinationPresent: Boolean,
         date: Date,
         measurements: {
+            measurementsPresent: Boolean,
             height: String,
             heightAge: String,
             heightSds: String,
             weight: String,
             weightAge: String,
             weightSds: String,
-            bmi: Number,
-            bmiSds: Number
+            bmi: String,
+            bmiSds: String
         },
         physicalFindings: {
+            physicalFindingsPresent: Boolean,
             face: String, // "Doll like", "Cherubic", etc.
             thyroid: String, // "normal", "diffuse goiter", etc.
             pubertalStatus: String, // "Prepubertal", "Peri-pubertal", "Pubertal"
@@ -105,7 +115,8 @@ const baselineFormSchema = new mongoose.Schema({
             spl: String
         },
         pituitarySurgery: {
-            history: String,
+             pituitarySurgeryPresent: Boolean,
+
             details: {
                 diagnosisDate: Date,
                 ctDate: Date,
@@ -117,7 +128,7 @@ const baselineFormSchema = new mongoose.Schema({
             }
         },
         pituitaryRadiation: {
-            history: String,
+            pituitaryRadiationPresent: Boolean,
             pituitaryRadiationType: String, // "Gamma knife", "conventional"
             startDate: Date,
             endDate: Date,
@@ -128,11 +139,14 @@ const baselineFormSchema = new mongoose.Schema({
 
     investigations: {
         date: Date,
+          investigationsPresent: Boolean,
         hematology: {
+            hematologyPresent: Boolean,
             hb: String,
             esr: String,
             tlc:String ,
             dlc: {
+                dlcPresent: Boolean,
                 p: String,
                 l: String,
                 e: String,
@@ -140,11 +154,13 @@ const baselineFormSchema = new mongoose.Schema({
                 b: String
             },
             pbf: {
+                  pbfPresent: Boolean,
                 cytic: String, // "normo", "hypo", "megaloblastic"
                 chromic: String // "normo", "hypochromic"
             }
         },
         biochemistry: {
+            biochemistryPresent: Boolean,
             sCreat: String,
             sgot: String,
             sgpt: String,
@@ -156,11 +172,11 @@ const baselineFormSchema = new mongoose.Schema({
             sNa: String,
             sK: String,
             fbs: String,
-            egfr: Number,
+            egfr: String,
              hba1c: String,
 remarks: String,
 lipidProfile: {
-  
+  lipidProfilePresent: Boolean,
   tc: String,
   tg: String,
   ldl: String,
@@ -169,19 +185,24 @@ lipidProfile: {
 }
         },
         urine: {
+            
+             urinePresent: Boolean,
             lowestPh: String,
             albumin: String,
             glucose: String,
             microscopy: String
         },
         sttg: {
+             sttgPresent: Boolean,
             value: String,
             place: String // "AIIMS", "LPL", "Outside"
         },
         imaging: {
+            imagingPresent: Boolean,
             xrayChest: String, // "normal", "abnormal"
             xraySkull: String, // "normal", "abnormal"
             boneAge: {
+                boneAgePresent: Boolean,
                 date: Date,
                 value: String,
                 gpScoring: Boolean
@@ -190,8 +211,10 @@ lipidProfile: {
     },
 
     endocrineWorkup: {
+        endocrineWorkupPresent: Boolean,
         date: Date,
         tests: {
+            testsPresent: Boolean,
             t4: String,
             freeT4: String,
             tsh: String,
@@ -205,6 +228,7 @@ lipidProfile: {
             testosterone: String
         },
         ghStimulationTest: {
+            ghStimulationTestPresent: Boolean,
             ghStimulationType: String, // "Clonidine", "Glucagon"
             date: Date,
             place: String, // "AIIMS", "Outside"
@@ -219,10 +243,14 @@ lipidProfile: {
             peakGHLevel: String, // "<10", "<7", "<5"
             exactPeakGH: String,
             peakGHTime: String
-        }
+        },
+        ghStimulationTestResults: {
+        ghStimulationTestResultsPresent: Boolean,
+      },
     },
 
     mri: {
+        mriDetailsPresent: Boolean,
         performed: String,
         date: Date,
         contrastUsed: String,
@@ -232,6 +260,7 @@ lipidProfile: {
         cdAvailable: String,
         scanned: String,
         findings: {
+             mriFindingsPresent: Boolean,
             anteriorPituitaryHypoplasia: String,
             pituitaryStalkInterruption: String,
             ectopicPosteriorPituitary: String,
@@ -241,8 +270,9 @@ lipidProfile: {
     },
 
     treatment: {
+         treatmentDetailsPresent: Boolean,
         hypothyroidism: {
-            present: String,
+           hypothyroidismPresent: Boolean,
             diagnosisDate: Date,
             treatmentStartDate: Date,
             currentDose: String,
@@ -251,7 +281,7 @@ lipidProfile: {
             source: String // "purchased", "hospital supply"
         },
         hypocortisolism: {
-            present: String,
+          hypocortisolismPresent: Boolean,
             diagnosisDate: Date,
             acthStimTest: String,
             testDate: Date,
@@ -265,14 +295,14 @@ lipidProfile: {
             source: String // "purchased", "hospital supply"
         },
         di: {
-            present: String,
+           iabetesInsipidusPresent: Boolean,
             diagnosisDate: Date,
             minirin: String,
             dose: String, // "half", "full", "double"
             frequency: String // 1, 2, 3
         },
         hypogonadism: {
-            present: String,
+              hypogonadismPresent: Boolean,
             diagnosisDate: Date,
             treatmentStartDate: Date,
             fullAdultDoseDate: Date,
@@ -287,16 +317,19 @@ lipidProfile: {
             iron: Boolean
         },
         otherTreatments: {
+             otherTreatmentsPresent: Boolean,
             antiepileptics: Boolean,
             otherDrugs: String
         }
     },
 
     diagnosis: {
+         diagnosisPresent: Boolean,
         diagnosisType: String, // "Congenital", "Acquired"
         isolatedGHD: String,
         hypopituitarism: String,
         affectedAxes: {
+             affectedAxesPresent: Boolean,
             thyroid: String,
             cortisol: String,
             gonadal: String,

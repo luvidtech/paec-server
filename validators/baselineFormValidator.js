@@ -20,8 +20,8 @@ export const validateBaselineForm = [
     // body('history.birthHistory.duration').notEmpty().withMessage('Birth duration is required'),
     // body('history.birthHistory.deliveryPlace').notEmpty().withMessage('Delivery place is required'),
     // body('history.birthHistory.deliveryNature').notEmpty().withMessage('Delivery nature is required'),
-    body('history.birthHistory.birthWeight').isNumeric().withMessage('Birth weight must be a number'),
-    body('history.birthHistory.birthLength').isNumeric().withMessage('Birth length must be a number'),
+    // body('history.birthHistory.birthWeight').isNumeric().withMessage('Birth weight must be a number'),
+    // body('history.birthHistory.birthLength').isNumeric().withMessage('Birth length must be a number'),
 
     // Optional: You can keep adding validations for deeper levels (like pubertyHistory, familyHistory, etc.)
 ]
