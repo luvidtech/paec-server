@@ -22,8 +22,27 @@ const storage = multer.diskStorage({
     }
 })
 
+// File filter function
+const fileFilter = (req, file, cb) => {
+    console.log('Multer processing file:', file.originalname, 'mimetype:', file.mimetype);
+    // Allow only image files
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true)
+    } else {
+        console.log('File rejected:', file.originalname, 'mimetype:', file.mimetype);
+        cb(new Error('Only image files are allowed!'), false)
+    }
+}
+
 // Initialize multer upload with the storage configuration
-const upload = multer({ storage: storage })
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 10 // Maximum 10 files
+    }
+})
 
 // Export upload middleware for use in routes
 export default upload
