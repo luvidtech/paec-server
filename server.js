@@ -18,7 +18,9 @@ import baselineFormRoutes from './routes/baselineForm/baselineFormRoutes.js'
 import followupFormRoutes from './routes/followupForm/followupFormRoutes.js'
 import dumpRoutes from './routes/dump/dumpRoutes.js'
 import logsRoutes from './routes/logs/logsRoutes.js'
-
+import importRoutes from './routes/import/importRoutes.js'
+import exportRoutes from './routes/export/exportRoutes.js'
+import dashboardRoutes from './routes/dashboard/dashboardRoutes.js'
 
 import User from './models/userModel.js'
 
@@ -94,7 +96,9 @@ app.use('/api/baseline', baselineFormRoutes)
 app.use('/api/followup', followupFormRoutes)
 app.use('/api/dump', dumpRoutes)
 app.use('/api/logs', logsRoutes)
-
+app.use('/api/import', importRoutes)
+app.use('/api/export', exportRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 
 // Serve static files
 if (process.env.NODE_ENV === 'production') {

@@ -4,6 +4,12 @@ import asyncHandler from "../../utils/asyncHandler.js"
 import { validationResult } from 'express-validator'
 import HttpError from "../../utils/httpErrorMiddleware.js"
 import newLog from "../../utils/newLog.js"
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { v4 as uuidv4 } from 'uuid'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Create Baseline Form
 export const createBaselineForm = asyncHandler(async (req, res) => {
@@ -33,10 +39,47 @@ export const createBaselineForm = asyncHandler(async (req, res) => {
             })
         }
 
+        // Handle MRI image uploads
+        let mriImages = []
+        if (req.files && Object.keys(req.files).length > 0) {
+            const mriFolder = path.join(__dirname, "../../uploads/mri")
+            if (!fs.existsSync(mriFolder)) {
+                fs.mkdirSync(mriFolder, { recursive: true })
+            }
+
+            // Process MRI images
+            const mriFiles = req.files.mriImages
+            if (mriFiles && Array.isArray(mriFiles)) {
+                for (const file of mriFiles) {
+                    const originalName = file.originalname.split(" ").join("-").toLowerCase()
+                    const uniqueId = uuidv4()
+                    const paecNo = patientDetails?.paecNo || 'unknown'
+                    const newFileName = `${paecNo}_${uniqueId}${path.extname(originalName)}`
+                    const filePath = path.join(mriFolder, newFileName)
+
+                    // Check if the file exists before renaming it
+                    if (fs.existsSync(file.path)) {
+                        fs.renameSync(file.path, filePath) // Move the file to the final location
+                        mriImages.push(`/mri/${newFileName}`) // Add to array
+                    } else {
+                        return res.status(400).json({ message: "File not found for upload" })
+                    }
+                }
+            }
+        }
+
         const formData = {
             ...req.body,
             createdBy: req.user._id,
             center: req.user.center
+        }
+
+        // Add MRI images to form data if any were uploaded
+        if (mriImages.length > 0) {
+            if (!formData.mri) {
+                formData.mri = {}
+            }
+            formData.mri.mriImages = mriImages
         }
 
         const newForm = new BaselineForm(formData)
@@ -193,6 +236,35 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
         // Clone for diff comparison
         const oldForm = form.toObject()
 
+        // Handle MRI image uploads for updates
+        let newMriImages = []
+        if (req.files && Object.keys(req.files).length > 0) {
+            const mriFolder = path.join(__dirname, "../../uploads/mri")
+            if (!fs.existsSync(mriFolder)) {
+                fs.mkdirSync(mriFolder, { recursive: true })
+            }
+
+            // Process MRI images
+            const mriFiles = req.files.mriImages
+            if (mriFiles && Array.isArray(mriFiles)) {
+                for (const file of mriFiles) {
+                    const originalName = file.originalname.split(" ").join("-").toLowerCase()
+                    const uniqueId = uuidv4()
+                    const paecNo = patientDetails?.paecNo || form.patientDetails?.paecNo || 'unknown'
+                    const newFileName = `${paecNo}_${uniqueId}${path.extname(originalName)}`
+                    const filePath = path.join(mriFolder, newFileName)
+
+                    // Check if the file exists before renaming it
+                    if (fs.existsSync(file.path)) {
+                        fs.renameSync(file.path, filePath) // Move the file to the final location
+                        newMriImages.push(`/mri/${newFileName}`) // Add to array
+                    } else {
+                        return res.status(400).json({ message: "File not found for upload" })
+                    }
+                }
+            }
+        }
+
         // Push to updatedBy array
         form.updatedBy.push({
             user: req.user._id,
@@ -201,6 +273,18 @@ export const updateBaselineForm = asyncHandler(async (req, res) => {
 
         // Apply updates
         Object.assign(form, req.body)
+
+        // Add new MRI images to existing array
+        if (newMriImages.length > 0) {
+            if (!form.mri) {
+                form.mri = {}
+            }
+            if (!form.mri.mriImages) {
+                form.mri.mriImages = []
+            }
+            // Merge new images with existing ones
+            form.mri.mriImages = [...form.mri.mriImages, ...newMriImages]
+        }
 
         const updatedForm = await form.save()
 
@@ -252,6 +336,16 @@ export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
     if (form) {
         const deletedBy = req.user ? req.user._id : null
         const deletedTime = Date.now()
+
+        // Delete MRI images if they exist
+        if (form.mri && form.mri.mriImages && form.mri.mriImages.length > 0) {
+            for (const imagePath of form.mri.mriImages) {
+                const fullPath = path.join(__dirname, "../../uploads", imagePath)
+                if (fs.existsSync(fullPath)) {
+                    fs.unlinkSync(fullPath)
+                }
+            }
+        }
 
         // Mark baseline as deleted
         form.isDeleted = {

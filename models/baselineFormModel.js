@@ -259,6 +259,7 @@ lipidProfile: {
         filmsAvailable: String,
         cdAvailable: String,
         scanned: String,
+        mriImages: [String], // Array of image paths
         findings: {
              mriFindingsPresent: Boolean,
             anteriorPituitaryHypoplasia: String,
