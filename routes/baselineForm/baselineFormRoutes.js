@@ -4,7 +4,8 @@ import {
     getBaselineForm,
     deleteBaselineForm,
     getBaselineFormById,
-    updateBaselineForm
+    updateBaselineForm,
+    searchBaselineForm
 } from '../../controllers/baselineForm/baselineFormController.js'
 import upload from "../../utils/multer.js"
 
@@ -19,6 +20,7 @@ router.post('/', authenticateUser, upload.fields([
     { name: "mriImages", maxCount: 10 },
 ]), validateBaselineForm, createBaselineForm)
 router.get('/', authenticateUser, getBaselineForm)
+router.get('/search', authenticateUser, searchBaselineForm)
 router.get('/:id', authenticateUser, getBaselineFormById)
 router.patch('/:id', authenticateUser, upload.fields([
     { name: "mriImages", maxCount: 10 },
