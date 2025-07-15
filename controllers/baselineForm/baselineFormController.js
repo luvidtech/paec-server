@@ -160,6 +160,86 @@ export const getBaselineFormById = asyncHandler(async (req, res) => {
     }
 })
 
+// Search Baseline Form
+export const searchBaselineForm = asyncHandler(async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 10,
+            paecNo,
+            uhid,
+            name
+        } = req.query
+
+        const query = { 'isDeleted.status': false }
+
+        // Access-based filtering
+        const accessTo = req.user.accessTo
+        if (accessTo === 'own') {
+            query['createdBy'] = req.user._id
+        } else if (accessTo === 'center') {
+            query['center'] = req.user.center
+        }
+
+        // Build search query
+        const searchConditions = []
+        
+        if (paecNo) {
+            searchConditions.push({
+                'patientDetails.paecNo': { $regex: paecNo, $options: 'i' }
+            })
+        }
+        
+        if (uhid) {
+            searchConditions.push({
+                'patientDetails.uhid': { $regex: uhid, $options: 'i' }
+            })
+        }
+        
+        if (name) {
+            searchConditions.push({
+                'patientDetails.name': { $regex: name, $options: 'i' }
+            })
+        }
+
+        // If search conditions exist, add them to the main query
+        if (searchConditions.length > 0) {
+            query.$or = searchConditions
+        }
+
+        // Validate that at least one search parameter is provided
+        if (searchConditions.length === 0) {
+            return res.status(400).json({ 
+                message: 'At least one search parameter (paecNo, uhid, or name) is required' 
+            })
+        }
+
+        const forms = await BaselineForm.find(query)
+            .populate('createdBy', 'name email')
+            .populate('center', 'name')
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .exec()
+
+        const count = await BaselineForm.countDocuments(query)
+
+        res.json({
+            forms,
+            totalPages: Math.ceil(count / parseInt(limit)),
+            currentPage: parseInt(page),
+            totalResults: count,
+            searchParams: {
+                paecNo: paecNo || null,
+                uhid: uhid || null,
+                name: name || null
+            }
+        })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+})
+
 
 
 // Update Baseline Form
