@@ -6,7 +6,8 @@ import {
     deleteBaselineForm,
     getBaselineFormById,
     updateBaselineForm,
-    searchBaselineForm
+    searchBaselineForm,
+    deleteMriImages
 } from '../../controllers/baselineForm/baselineFormController.js'
 import upload from "../../utils/multer.js"
 
@@ -60,5 +61,6 @@ router.patch('/:id', authenticateUser, upload.fields([
     { name: "mriImages", maxCount: 10 },
 ]), handleMulterError, updateBaselineForm)
 router.delete('/:id', authenticateUser, deleteBaselineForm)
+router.delete('/:id/mri-images', authenticateUser, deleteMriImages)
 
 export default router

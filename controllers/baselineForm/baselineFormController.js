@@ -500,3 +500,125 @@ export const deleteBaselineForm = asyncHandler(async (req, res, next) => {
     return next(new HttpError("Baseline form not found", 404));
   }
 });
+
+// Delete MRI Images
+export const deleteMriImages = asyncHandler(async (req, res) => {
+  try {
+    const formId = req.params.id;
+    const { imagePaths } = req.body; // Array of image paths to delete
+
+    if (!imagePaths || !Array.isArray(imagePaths) || imagePaths.length === 0) {
+      return res.status(400).json({ 
+        message: "Please provide an array of image paths to delete" 
+      });
+    }
+
+    const form = await BaselineForm.findById(formId);
+
+    if (!form) {
+      return res.status(404).json({ message: "Form not found" });
+    }
+
+    // Access control
+    const accessTo = req.user.accessTo;
+    const isOwner = form.createdBy.toString() === req.user._id.toString();
+    const isSameCenter = form.center?.toString() === req.user.center?.toString();
+
+    if (
+      accessTo !== "all" &&
+      !(accessTo === "own" && isOwner) &&
+      !(accessTo === "center" && isSameCenter)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // Check if form has MRI images
+    if (!form.mri || !form.mri.mriImages || !Array.isArray(form.mri.mriImages)) {
+      return res.status(400).json({ 
+        message: "No MRI images found for this form" 
+      });
+    }
+
+    const deletedImages = [];
+    const failedDeletions = [];
+    const updatedImagePaths = [...form.mri.mriImages];
+
+    // Process each image path to delete
+    for (const imagePath of imagePaths) {
+      // Validate that the image path exists in the form's MRI images
+      const imageIndex = updatedImagePaths.findIndex(path => path === imagePath);
+      
+      if (imageIndex === -1) {
+        failedDeletions.push({
+          path: imagePath,
+          reason: "Image not found in form's MRI images"
+        });
+        continue;
+      }
+
+      try {
+        // Construct full file path
+        const fullPath = path.join(__dirname, "../../uploads", imagePath);
+        
+        // Check if file exists on disk
+        if (fs.existsSync(fullPath)) {
+          // Delete the file from disk
+          fs.unlinkSync(fullPath);
+          deletedImages.push(imagePath);
+        } else {
+          // File doesn't exist on disk, but we'll still remove it from the array
+          console.warn(`File not found on disk: ${fullPath}`);
+        }
+
+        // Remove from the array (regardless of whether file existed on disk)
+        updatedImagePaths.splice(imageIndex, 1);
+        
+      } catch (error) {
+        console.error(`Error deleting file ${imagePath}:`, error);
+        failedDeletions.push({
+          path: imagePath,
+          reason: `File system error: ${error.message}`
+        });
+      }
+    }
+
+    // Update the form with the new MRI images array
+    form.mri.mriImages = updatedImagePaths;
+
+    // Push to updatedBy array
+    form.updatedBy.push({
+      user: req.user._id,
+      updatedAt: new Date(),
+    });
+
+    await form.save();
+
+    // Log the deletion
+    if (deletedImages.length > 0) {
+      await newLog({
+        user: req.user._id,
+        action: "deleted",
+        module: "baselineform",
+        modifiedData: {
+          baselineFormId: formId,
+          deletedMriImages: deletedImages,
+          remainingImages: updatedImagePaths.length
+        },
+      });
+    }
+
+    res.json({
+      message: "MRI images deletion completed",
+      deletedImages,
+      failedDeletions,
+      remainingImages: updatedImagePaths.length,
+      totalImagesBefore: form.mri.mriImages.length + deletedImages.length
+    });
+
+  } catch (error) {
+    console.error('Error in deleteMriImages:', error);
+    res.status(500).json({ 
+      message: `Error deleting MRI images: ${error.message}` 
+    });
+  }
+});
