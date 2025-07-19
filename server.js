@@ -63,9 +63,7 @@ app.options('*', (req, res) => {
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(express.static(path.join(new URL(import.meta.url).pathname, './uploads')))
-const publicPath = path.join(__dirname, './uploads')
-// app.use(express.static(publicPath))
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 
 app.use(passport.initialize())
