@@ -55,7 +55,7 @@ const followupFormSchema = new mongoose.Schema({
         details: {
             daysMissedPerMonth: String,
             daysMissedLast3Months: String,
-            lastPAECVisit: Date,
+            lastPAECVisit: String,
             daysMissedPerWeek: String,
             totalDaysMissedSinceLastVisit: String,
             reasons: String
@@ -93,16 +93,16 @@ const followupFormSchema = new mongoose.Schema({
     investigations: {
          investigationsPresent: Boolean,
         boneAge: {
-            lastXRayDate: Date
+            lastXRayDate: String
         },
         labTests: {
             serumT4: {
                 value: String, // ug/dl
-                date: Date
+                date: String
             },
             igf1: {
                 value: String, // mg/dl
-                date: Date
+                date: String
             }
         },
         remarks: String,
