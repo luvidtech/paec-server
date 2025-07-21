@@ -26,7 +26,8 @@ export const exportForm = asyncHandler(async (req, res) => {
         $regex: paecNo,
         $options: "i",
       };
-      followupQuery["patientDetails.paecNo"] = {
+      // For followup forms, we need to filter through the baseline form
+      followupQuery["baselineForm.patientDetails.paecNo"] = {
         $regex: paecNo,
         $options: "i",
       };
@@ -37,7 +38,8 @@ export const exportForm = asyncHandler(async (req, res) => {
         $regex: patientName,
         $options: "i",
       };
-      followupQuery["patientDetails.name"] = {
+      // For followup forms, we need to filter through the baseline form
+      followupQuery["baselineForm.patientDetails.name"] = {
         $regex: patientName,
         $options: "i",
       };
@@ -45,7 +47,8 @@ export const exportForm = asyncHandler(async (req, res) => {
 
     if (uhid) {
       baselineQuery["patientDetails.uhid"] = { $regex: uhid, $options: "i" };
-      followupQuery["patientDetails.uhid"] = { $regex: uhid, $options: "i" };
+      // For followup forms, we need to filter through the baseline form
+      followupQuery["baselineForm.patientDetails.uhid"] = { $regex: uhid, $options: "i" };
     }
 
     if (fromDate || toDate) {
@@ -53,7 +56,7 @@ export const exportForm = asyncHandler(async (req, res) => {
       if (fromDate) dateQuery.$gte = new Date(fromDate);
       if (toDate) dateQuery.$lte = new Date(toDate);
       baselineQuery.visitDate = dateQuery;
-      followupQuery.visitDate = dateQuery;
+      followupQuery["visitDetails.currentVisitDate"] = dateQuery;
     }
 
     // Access control
@@ -78,11 +81,60 @@ export const exportForm = asyncHandler(async (req, res) => {
     }
 
     if (formType === "followup" || formType === "both") {
-      followupForms = await FollowupForm.find(followupQuery)
-        .populate("baselineForm", "patientDetails.paecNo patientDetails.name")
+      // Check total followup forms in database
+      const totalFollowupForms = await FollowupForm.countDocuments({ "isDeleted.status": false });
+      console.log("Total followup forms in database:", totalFollowupForms);
+      
+      // First, get all followup forms without filters
+      let followupFormsQuery = FollowupForm.find({ "isDeleted.status": false })
+        .populate("baselineForm", "patientDetails center")
         .populate("createdBy", "userName email")
-        .populate("center", "name")
-        .sort({ visitDate: -1 });
+        .sort({ "visitDetails.currentVisitDate": -1 });
+
+      // Apply access control
+      if (accessTo === "own") {
+        followupFormsQuery = followupFormsQuery.where("createdBy", req.user._id);
+      } else if (accessTo === "center") {
+        // For center access, we need to filter after population since center is in baseline form
+        // We'll handle this in the JavaScript filtering
+      }
+
+      followupForms = await followupFormsQuery.exec();
+
+      // Apply filters after population
+      if (paecNo) {
+        followupForms = followupForms.filter(form => 
+          form.baselineForm?.patientDetails?.paecNo?.toLowerCase().includes(paecNo.toLowerCase())
+        );
+      }
+
+      if (patientName) {
+        followupForms = followupForms.filter(form => 
+          form.baselineForm?.patientDetails?.name?.toLowerCase().includes(patientName.toLowerCase())
+        );
+      }
+
+      if (uhid) {
+        followupForms = followupForms.filter(form => 
+          form.baselineForm?.patientDetails?.uhid?.toLowerCase().includes(uhid.toLowerCase())
+        );
+      }
+
+      if (fromDate || toDate) {
+        followupForms = followupForms.filter(form => {
+          const visitDate = new Date(form.visitDetails?.currentVisitDate);
+          if (fromDate && visitDate < new Date(fromDate)) return false;
+          if (toDate && visitDate > new Date(toDate)) return false;
+          return true;
+        });
+      }
+
+      // Apply center access control after population
+      if (accessTo === "center") {
+        followupForms = followupForms.filter(form => 
+          form.baselineForm?.center?.toString() === req.user.center?.toString()
+        );
+      }
     }
 
     // Create Excel workbook
@@ -110,51 +162,26 @@ export const exportForm = asyncHandler(async (req, res) => {
     if (baselineForms.length > 0) {
       const baselineData = baselineForms.map((form) => {
         const row = {
-          SNO: baselineForms.indexOf(form) + 1,
-          PAECNo: handleEmptyValue(form.patientDetails?.paecNo),
-          Name: handleEmptyValue(form.patientDetails?.name),
-          UHID: handleEmptyValue(form.patientDetails?.uhid),
-          Sex: handleEmptyValue(form.patientDetails?.sex),
-          Age: handleEmptyValue(form.patientDetails?.age),
-          DOB: formatDate(form.patientDetails?.dob),
-          HouseNumber: handleEmptyValue(form.patientDetails?.address?.street),
-          City: handleEmptyValue(form.patientDetails?.address?.city),
-          State: handleEmptyValue(form.patientDetails?.address?.state),
-          Cell1: handleEmptyValue(form.patientDetails?.contact?.cell1),
-          Cell2: handleEmptyValue(form.patientDetails?.contact?.cell2),
-          Landline: handleEmptyValue(form.patientDetails?.contact?.landline),
-          VisitDate: formatDate(form.visitDate),
+          "SNO": baselineForms.indexOf(form) + 1,
+          "PAECNo": handleEmptyValue(form.patientDetails?.paecNo),
+          "Name": handleEmptyValue(form.patientDetails?.name),
+          "UHID": handleEmptyValue(form.patientDetails?.uhid),
+          "Sex": handleEmptyValue(form.patientDetails?.sex),
+          "Age": handleEmptyValue(form.patientDetails?.age),
+          "DOB": formatDate(form.patientDetails?.dob),
+          "HouseNumber": handleEmptyValue(form.patientDetails?.address?.street),
+          "City": handleEmptyValue(form.patientDetails?.address?.city),
+          "State": handleEmptyValue(form.patientDetails?.address?.state),
+          "Cell1": handleEmptyValue(form.patientDetails?.contact?.cell1),
+          "Cell2": handleEmptyValue(form.patientDetails?.contact?.cell2),
+          "Landline": handleEmptyValue(form.patientDetails?.contact?.landline),
+          "VisitDate": formatDate(form.visitDate),
           "Form Type": "Baseline",
           "Created By": handleEmptyValue(form.createdBy?.userName),
           "Created Date": formatDate(form.createdAt),
           Center: handleEmptyValue(form.center?.name),
         };
 
-        // Add diagnosis fields
-        if (form.diagnosis) {
-          row["Diagnosis Type"] = handleEmptyValue(
-            form.diagnosis.diagnosisType
-          );
-          row["Isolated GHD"] = handleEmptyValue(form.diagnosis.isolatedGHD);
-          row["Hypopituitarism"] = handleEmptyValue(
-            form.diagnosis.hypopituitarism
-          );
-          row["Affected Axes Thyroid"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.thyroid
-          );
-          row["Affected Axes Cortisol"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.cortisol
-          );
-          row["Affected Axes Gonadal"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.gonadal
-          );
-          row["Affected Axes DI"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.di
-          );
-          row["MRI Abnormality"] = handleEmptyValue(
-            form.diagnosis.mriAbnormality
-          );
-        }
 
         // Add history fields
         if (form.history) {
@@ -704,7 +731,7 @@ export const exportForm = asyncHandler(async (req, res) => {
           }
           if (form.treatment.di) {
             row["DiabetesInsipidusPresent"] = handleEmptyValue(form.treatment.di.present);
-            row["DDiabetesInsipidusDiagnosisDate"] = formatDate(
+            row["DiabetesInsipidusDiagnosisDate"] = formatDate(
               form.treatment.di.diagnosisDate
             );
             row["Minirin"] = handleEmptyValue(form.treatment.di.minirin);
@@ -835,60 +862,190 @@ export const exportForm = asyncHandler(async (req, res) => {
     }
 
     // Export followup forms
+    console.log("Followup forms found:", followupForms.length);
     if (followupForms.length > 0) {
       const followupData = followupForms.map((form) => {
         const row = {
           "S.NO": followupForms.indexOf(form) + 1,
-          "PAEC No": handleEmptyValue(form.patientDetails?.paecNo),
-          "Patient Name": handleEmptyValue(form.patientDetails?.name),
-          UHID: handleEmptyValue(form.patientDetails?.uhid),
-          Sex: handleEmptyValue(form.patientDetails?.sex),
-          Age: handleEmptyValue(form.patientDetails?.age),
-          DOB: formatDate(form.patientDetails?.dob),
-          Address: handleEmptyValue(form.patientDetails?.address?.street),
-          City: handleEmptyValue(form.patientDetails?.address?.city),
-          State: handleEmptyValue(form.patientDetails?.address?.state),
-          "Phone 1": handleEmptyValue(form.patientDetails?.contact?.cell1),
-          "Phone 2": handleEmptyValue(form.patientDetails?.contact?.cell2),
-          Landline: handleEmptyValue(form.patientDetails?.contact?.landline),
-          "Visit Date": formatDate(form.visitDate),
+          "PAECNo": handleEmptyValue(form.baselineForm?.patientDetails?.paecNo),
+          "Name": handleEmptyValue(form.baselineForm?.patientDetails?.name),
+          "UHID": handleEmptyValue(form.baselineForm?.patientDetails?.uhid),
+          "Sex": handleEmptyValue(form.baselineForm?.patientDetails?.sex),
+          "Age": handleEmptyValue(form.baselineForm?.patientDetails?.age),
+          "DOB": formatDate(form.baselineForm?.patientDetails?.dob),
+          "HouseNumber": handleEmptyValue(form.baselineForm?.patientDetails?.address?.street),
+          "City": handleEmptyValue(form.baselineForm?.patientDetails?.address?.city),
+          "State": handleEmptyValue(form.baselineForm?.patientDetails?.address?.state),
+          "Cell1": handleEmptyValue(form.baselineForm?.patientDetails?.contact?.cell1),
+          "Cell2": handleEmptyValue(form.baselineForm?.patientDetails?.contact?.cell2),
+          "Landline": handleEmptyValue(form.baselineForm?.patientDetails?.contact?.landline),
           "Form Type": "Followup",
-          "Baseline PAEC No": handleEmptyValue(
+          "BaselinePAECNo": handleEmptyValue(
             form.baselineForm?.patientDetails?.paecNo
           ),
           "Created By": handleEmptyValue(form.createdBy?.userName),
           "Created Date": formatDate(form.createdAt),
-          Center: handleEmptyValue(form.center?.name),
+          // "Center": handleEmptyValue(form.baselineForm?.center?.name),
         };
 
-        // Add diagnosis fields (same as baseline)
-        if (form.diagnosis) {
-          row["Diagnosis Type"] = handleEmptyValue(
-            form.diagnosis.diagnosisType
-          );
-          row["Isolated GHD"] = handleEmptyValue(form.diagnosis.isolatedGHD);
-          row["Hypopituitarism"] = handleEmptyValue(
-            form.diagnosis.hypopituitarism
-          );
-          row["Affected Axes Thyroid"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.thyroid
-          );
-          row["Affected Axes Cortisol"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.cortisol
-          );
-          row["Affected Axes Gonadal"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.gonadal
-          );
-          row["Affected Axes DI"] = handleEmptyValue(
-            form.diagnosis.affectedAxes?.di
-          );
-          row["MRI Abnormality"] = handleEmptyValue(
-            form.diagnosis.mriAbnormality
-          );
+        // Add visit details
+        if (form.visitDetails) {
+          row["LastVisitDate"] = formatDate(form.visitDate);
+          row["CurrentVisitDate"] = formatDate(form.visitDetails.currentVisitDate);
         }
 
-        // Add all other fields similar to baseline (abbreviated for brevity)
-        // ... (same field mapping as baseline)
+        // Add GH therapy details
+        if (form.ghTherapy) {
+          row["GHTherapyPresent"] = handleEmptyValue(form.ghTherapy.ghTherapyPresent);
+          
+          if (form.ghTherapy.details) {
+            row["GHCurrentDose"] = handleEmptyValue(form.ghTherapy.details.currentDose);
+            row["GHBrand"] = handleEmptyValue(form.ghTherapy.details.brand);
+            row["GHAdministrationMethod"] = handleEmptyValue(form.ghTherapy.details.administrationMethod);
+            row["GHSyringeUsage"] = handleEmptyValue(form.ghTherapy.details.syringeUsage);
+            row["GHCostCoverage"] = handleEmptyValue(form.ghTherapy.details.costCoverage);
+          }
+          
+          row["GHTherapyRemarks"] = handleEmptyValue(form.ghTherapy.remarks);
+        }
+
+        // Add measurements
+        if (form.measurements) {
+          row["MeasurementsPresent"] = handleEmptyValue(form.measurements.measurementsPresent);
+          row["Height"] = handleEmptyValue(form.measurements.height);
+          row["Weight"] = handleEmptyValue(form.measurements.weight);
+          row["BMI"] = handleEmptyValue(form.measurements.bmi);
+          row["HeightSDS"] = handleEmptyValue(form.measurements.heightSds);
+          row["WeightSDS"] = handleEmptyValue(form.measurements.weightSds);
+          row["BMISDS"] = handleEmptyValue(form.measurements.bmiSds);
+          row["MeasurementsRemarks"] = handleEmptyValue(form.measurements.remarks);
+        }
+
+        // Add pubertal status
+        if (form.pubertalStatus) {
+          row["PubertalStatusPresent"] = handleEmptyValue(form.pubertalStatus.pubertalStatusPresent);
+          
+          if (form.pubertalStatus.testicularVolume) {
+            row["TesticularVolumeRight"] = handleEmptyValue(form.pubertalStatus.testicularVolume.right);
+            row["TesticularVolumeLeft"] = handleEmptyValue(form.pubertalStatus.testicularVolume.left);
+          }
+          
+          row["PubicHair"] = handleEmptyValue(form.pubertalStatus.pubicHair);
+          row["BreastStage"] = handleEmptyValue(form.pubertalStatus.breastStage);
+          row["PubertalStatusRemarks"] = handleEmptyValue(form.pubertalStatus.remarks);
+        }
+
+        // Add compliance
+        if (form.compliance) {
+          row["CompliancePresent"] = handleEmptyValue(form.compliance.compliancePresent);
+          row["MissedDoses"] = handleEmptyValue(form.compliance.missedDoses);
+          
+          if (form.compliance.details) {
+            row["DaysMissedPerMonth"] = handleEmptyValue(form.compliance.details.daysMissedPerMonth);
+            row["DaysMissedLast3Months"] = handleEmptyValue(form.compliance.details.daysMissedLast3Months);
+            row["LastPAECVisit"] = handleEmptyValue(form.compliance.details.lastPAECVisit);
+            row["DaysMissedPerWeek"] = handleEmptyValue(form.compliance.details.daysMissedPerWeek);
+            row["TotalDaysMissedSinceLastVisit"] = handleEmptyValue(form.compliance.details.totalDaysMissedSinceLastVisit);
+            row["ComplianceReasons"] = handleEmptyValue(form.compliance.details.reasons);
+          }
+          
+          row["ComplianceRemarks"] = handleEmptyValue(form.compliance.remarks);
+        }
+
+        // Add side effects
+        if (form.sideEffects) {
+          row["SideEffectsPresent"] = handleEmptyValue(form.sideEffects.sideEffectsPresent);
+          
+          if (form.sideEffects.effects) {
+            row["EdemaFeet"] = handleEmptyValue(form.sideEffects.effects.edemaFeet);
+            row["Headache"] = handleEmptyValue(form.sideEffects.effects.headache);
+            row["Gynecomastia"] = handleEmptyValue(form.sideEffects.effects.gynecomastia);
+            row["BlurringVision"] = handleEmptyValue(form.sideEffects.effects.blurringVision);
+            row["HipJointPain"] = handleEmptyValue(form.sideEffects.effects.hipJointPain);
+          }
+          
+          row["SideEffectsRemarks"] = handleEmptyValue(form.sideEffects.remarks);
+        }
+
+        // Add associated illness
+        if (form.associatedIllness) {
+          row["AssociatedIllnessPresent"] = handleEmptyValue(form.associatedIllness.associatedIllnessPresent);
+          row["AssociatedIllnessDetails"] = handleEmptyValue(form.associatedIllness.details);
+          row["OtherComplaints"] = handleEmptyValue(form.associatedIllness.otherComplaints);
+          row["AssociatedIllnessRemarks"] = handleEmptyValue(form.associatedIllness.remarks);
+        }
+
+        // Add growth velocity
+        if (form.growthVelocity) {
+          row["GrowthVelocityPresent"] = handleEmptyValue(form.growthVelocity.growthVelocityPresent);
+          row["Last6Months"] = handleEmptyValue(form.growthVelocity.last6Months);
+          row["SinceGHStart"] = handleEmptyValue(form.growthVelocity.sinceGHStart);
+          row["GrowthVelocityRemarks"] = handleEmptyValue(form.growthVelocity.remarks);
+        }
+
+        // Add investigations
+        if (form.investigations) {
+          row["InvestigationsPresent"] = handleEmptyValue(form.investigations.investigationsPresent);
+          
+          if (form.investigations.boneAge) {
+            row["LastXRayDate"] = handleEmptyValue(form.investigations.boneAge.lastXRayDate);
+          }
+          
+          if (form.investigations.labTests) {
+            if (form.investigations.labTests.serumT4) {
+              row["SerumT4Value"] = handleEmptyValue(form.investigations.labTests.serumT4.value);
+              row["SerumT4Date"] = handleEmptyValue(form.investigations.labTests.serumT4.date);
+            }
+            
+            if (form.investigations.labTests.igf1) {
+              row["IGF1Value"] = handleEmptyValue(form.investigations.labTests.igf1.value);
+              row["IGF1Date"] = handleEmptyValue(form.investigations.labTests.igf1.date);
+            }
+          }
+          
+          row["InvestigationsRemarks"] = handleEmptyValue(form.investigations.remarks);
+        }
+
+        // Add advised treatment
+        if (form.advisedTreatment) {
+          row["AdvisedTreatmentPresent"] = handleEmptyValue(form.advisedTreatment.advisedTreatmentPresent);
+          
+          if (form.advisedTreatment.ghDoseCalculation) {
+            row["CurrentWeight"] = handleEmptyValue(form.advisedTreatment.ghDoseCalculation.currentWeight);
+            row["MgPerKgPerWeek"] = handleEmptyValue(form.advisedTreatment.ghDoseCalculation.mgPerKgPerWeek);
+            row["CalculatedDose"] = handleEmptyValue(form.advisedTreatment.ghDoseCalculation.calculatedDose);
+            row["RoundedDose"] = handleEmptyValue(form.advisedTreatment.ghDoseCalculation.roundedDose);
+          }
+          
+          if (form.advisedTreatment.accompanyingTreatments) {
+            if (form.advisedTreatment.accompanyingTreatments.thyroxin) {
+              row["ThyroxinDose"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.thyroxin.dose);
+            }
+            
+            if (form.advisedTreatment.accompanyingTreatments.corticosteroids) {
+              row["CorticosteroidsType"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.corticosteroids.corticosteroidsType);
+              row["CorticosteroidsDose"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.corticosteroids.dose);
+              row["CorticosteroidsFrequency"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.corticosteroids.frequency);
+            }
+            
+            if (form.advisedTreatment.accompanyingTreatments.minirin) {
+              row["MinirinDose"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.minirin.dose);
+            }
+            
+            if (form.advisedTreatment.accompanyingTreatments.testosterone) {
+              row["TestosteroneDose"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.testosterone.dose);
+              row["TestosteroneFrequency"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.testosterone.frequency);
+            }
+            
+            if (form.advisedTreatment.accompanyingTreatments.pragynova) {
+              row["PragynovaDose"] = handleEmptyValue(form.advisedTreatment.accompanyingTreatments.pragynova.dose);
+            }
+          }
+          
+          row["AdvisedTreatmentRemarks"] = handleEmptyValue(form.advisedTreatment.remarks);
+        }
+
+       
 
         // Remove excluded fields
         excludeFields.forEach((field) => {
@@ -898,12 +1055,21 @@ export const exportForm = asyncHandler(async (req, res) => {
         return row;
       });
 
-      const followupWorksheet = XLSX.utils.json_to_sheet(followupData);
-      XLSX.utils.book_append_sheet(
-        workbook,
-        followupWorksheet,
-        "Followup Forms"
-      );
+      if (followupData.length > 0) {
+        const followupWorksheet = XLSX.utils.json_to_sheet(followupData);
+        XLSX.utils.book_append_sheet(
+          workbook,
+          followupWorksheet,
+          "Followup Forms"
+        );
+      }
+    }
+
+    // Check if workbook has any sheets
+    if (workbook.SheetNames.length === 0) {
+      return res.status(400).json({ 
+        message: "No data found for export. Please check your filters or ensure data exists." 
+      });
     }
 
     // Generate Excel file
