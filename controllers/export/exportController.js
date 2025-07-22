@@ -20,35 +20,35 @@ export const exportForm = asyncHandler(async (req, res) => {
     const baselineQuery = { "isDeleted.status": false };
     const followupQuery = { "isDeleted.status": false };
 
-    // Apply filters
-    if (paecNo) {
-      baselineQuery["patientDetails.paecNo"] = {
-        $regex: paecNo,
-        $options: "i",
-      };
-      // For followup forms, we need to filter through the baseline form
-      followupQuery["baselineForm.patientDetails.paecNo"] = {
-        $regex: paecNo,
-        $options: "i",
-      };
+    // PAEC No filter (array or string)
+    if (Array.isArray(paecNo) && paecNo.length > 0) {
+      baselineQuery["patientDetails.paecNo"] = { $in: paecNo };
+    } else if (paecNo) {
+      baselineQuery["patientDetails.paecNo"] = { $regex: paecNo, $options: "i" };
     }
 
-    if (patientName) {
-      baselineQuery["patientDetails.name"] = {
-        $regex: patientName,
-        $options: "i",
-      };
-      // For followup forms, we need to filter through the baseline form
-      followupQuery["baselineForm.patientDetails.name"] = {
-        $regex: patientName,
-        $options: "i",
-      };
+    // Name filter (array or string)
+    if (Array.isArray(patientName) && patientName.length > 0) {
+      baselineQuery["$or"] = [
+        ...(baselineQuery["$or"] || []),
+        ...patientName.map(val => ({
+          "patientDetails.name": { $regex: val, $options: "i" }
+        }))
+      ];
+    } else if (patientName) {
+      baselineQuery["patientDetails.name"] = { $regex: patientName, $options: "i" };
     }
 
-    if (uhid) {
+    // UHID filter (array or string)
+    if (Array.isArray(uhid) && uhid.length > 0) {
+      baselineQuery["$or"] = [
+        ...(baselineQuery["$or"] || []),
+        ...uhid.map(val => ({
+          "patientDetails.uhid": { $regex: val, $options: "i" }
+        }))
+      ];
+    } else if (uhid) {
       baselineQuery["patientDetails.uhid"] = { $regex: uhid, $options: "i" };
-      // For followup forms, we need to filter through the baseline form
-      followupQuery["baselineForm.patientDetails.uhid"] = { $regex: uhid, $options: "i" };
     }
 
     if (fromDate || toDate) {
@@ -102,20 +102,38 @@ export const exportForm = asyncHandler(async (req, res) => {
       followupForms = await followupFormsQuery.exec();
 
       // Apply filters after population
-      if (paecNo) {
-        followupForms = followupForms.filter(form => 
+      if (Array.isArray(paecNo) && paecNo.length > 0) {
+        followupForms = followupForms.filter(form =>
+          paecNo.some(val =>
+            form.baselineForm?.patientDetails?.paecNo?.toLowerCase().includes(val.toLowerCase())
+          )
+        );
+      } else if (paecNo) {
+        followupForms = followupForms.filter(form =>
           form.baselineForm?.patientDetails?.paecNo?.toLowerCase().includes(paecNo.toLowerCase())
         );
       }
 
-      if (patientName) {
-        followupForms = followupForms.filter(form => 
+      if (Array.isArray(patientName) && patientName.length > 0) {
+        followupForms = followupForms.filter(form =>
+          patientName.some(val =>
+            form.baselineForm?.patientDetails?.name?.toLowerCase().includes(val.toLowerCase())
+          )
+        );
+      } else if (patientName) {
+        followupForms = followupForms.filter(form =>
           form.baselineForm?.patientDetails?.name?.toLowerCase().includes(patientName.toLowerCase())
         );
       }
 
-      if (uhid) {
-        followupForms = followupForms.filter(form => 
+      if (Array.isArray(uhid) && uhid.length > 0) {
+        followupForms = followupForms.filter(form =>
+          uhid.some(val =>
+            form.baselineForm?.patientDetails?.uhid?.toLowerCase().includes(val.toLowerCase())
+          )
+        );
+      } else if (uhid) {
+        followupForms = followupForms.filter(form =>
           form.baselineForm?.patientDetails?.uhid?.toLowerCase().includes(uhid.toLowerCase())
         );
       }
