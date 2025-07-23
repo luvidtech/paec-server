@@ -664,14 +664,25 @@ export const exportForm = asyncHandler(async (req, res) => {
             if (form.endocrineWorkup.ghStimulationTest.results && 
                 Array.isArray(form.endocrineWorkup.ghStimulationTest.results)) {
               
-              // Process each result entry
-              form.endocrineWorkup.ghStimulationTest.results.forEach((result, index) => {
-                const timeKey = `GHTestTime_${index + 1}`;
-                const clonidineKey = `GHTestClonidine_${index + 1}`;
-                const glucagonKey = `GHTestGlucagon_${index + 1}`;
-                
-                row[timeKey] = handleEmptyValue(result.time);
+              const clonidineTimes = ["0", "30", "60", "90", "120", "150"];
+              const glucagonTimes = ["0", "30", "60", "90", "120", "150", "180"];
+              const resultMap = {};
+              form.endocrineWorkup.ghStimulationTest.results.forEach((result) => {
+                let timeNum = "NA";
+                if (typeof result.time === "string") {
+                  const match = result.time.match(/(\d+)/);
+                  if (match) timeNum = match[1];
+                }
+                resultMap[timeNum] = result;
+              });
+              clonidineTimes.forEach(timeNum => {
+                const result = resultMap[timeNum] || {};
+                const clonidineKey = `GHTestClonidine${timeNum}`;
                 row[clonidineKey] = handleEmptyValue(result.clonidineGH);
+              });
+              glucagonTimes.forEach(timeNum => {
+                const result = resultMap[timeNum] || {};
+                const glucagonKey = `GHTestGlucagon${timeNum}`;
                 row[glucagonKey] = handleEmptyValue(result.glucagonGH);
               });
               
@@ -908,7 +919,7 @@ export const exportForm = asyncHandler(async (req, res) => {
 
         // Add visit details
         if (form.visitDetails) {
-          row["LastVisitDate"] = formatDate(form.visitDate);
+          row["LastVisitDate"] = formatDate(form.baselineForm?.visitDate);
           row["CurrentVisitDate"] = formatDate(form.visitDetails.currentVisitDate);
         }
 
