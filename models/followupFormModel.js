@@ -15,13 +15,13 @@ const followupFormSchema = new mongoose.Schema({
     },
     ghTherapy: {
         ghTherapyPresent: Boolean,
-        details: {
+       
             currentDose: String, // units per day
             brand: String,
             administrationMethod: String, // "Pen" or "Syringe"
             syringeUsage: String, // 1-7 or >7 injections per syringe
-            costCoverage: String // "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
-        },
+            costCoverage: String ,// "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
+       
         remarks: String,
     },
 
