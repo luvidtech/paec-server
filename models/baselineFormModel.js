@@ -18,7 +18,7 @@ const baselineFormSchema = new mongoose.Schema({
             type: String
         },
         dob: String,
-        age: Number,
+        age: String,
         sex: String, // "Male" or "Female"
         address: {
             street: String,
