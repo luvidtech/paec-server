@@ -36,6 +36,7 @@ app.use(cookieParser())
 const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:3000',
+  'http://localhost:5000',
   'http://localhost:5173',
   'http://192.168.2.115:3000',
   'http://paec.saasa.shop',
@@ -103,10 +104,11 @@ app.use('/api/dashboard', dashboardRoutes)
 // Serve static files
 if (process.env.NODE_ENV === 'production') {
   //set static folder
-  app.use(express.static(path.join(__dirname, '../frontend/build')))
+  const buildPath = process.env.BUILD_PATH || path.join(__dirname, './build')
+  app.use(express.static(buildPath))
 
   //any route that is not api will be redirected to index.html
-  app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html')))
+  app.get('*', (req, res) => res.sendFile(path.resolve(buildPath, 'index.html')))
 } else {
   app.get('/', (req, res) => {
     res.send('API IS RUNNING..!')
