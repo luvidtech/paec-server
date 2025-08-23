@@ -17,8 +17,8 @@ const baselineFormSchema = new mongoose.Schema({
         name: {
             type: String
         },
-        dob: Date,
-        age: Number,
+        dob: String,
+        age: String,
         sex: String, // "Male" or "Female"
         address: {
             street: String,
@@ -33,7 +33,7 @@ const baselineFormSchema = new mongoose.Schema({
     },
 
     visitDate: {
-        type: Date,
+        type: String,
     },
 
     history: {
@@ -88,7 +88,7 @@ const baselineFormSchema = new mongoose.Schema({
 
     examination: {
         examinationPresent: Boolean,
-        date: Date,
+        date: String,
         measurements: {
             measurementsPresent: Boolean,
             height: String,
@@ -118,11 +118,11 @@ const baselineFormSchema = new mongoose.Schema({
              pituitarySurgeryPresent: Boolean,
 
             details: {
-                diagnosisDate: Date,
-                ctDate: Date,
+                diagnosisDate: String,
+                ctDate: String,
                 numberOfSurgeries: String,
                 surgeryType: String, // "TNTS", "Transcranial"
-                surgeryDates: [Date],
+                surgeryDates: [String],
                 place: String,
                 surgeon: String
             }
@@ -130,15 +130,15 @@ const baselineFormSchema = new mongoose.Schema({
         pituitaryRadiation: {
             pituitaryRadiationPresent: Boolean,
             pituitaryRadiationType: String, // "Gamma knife", "conventional"
-            startDate: Date,
-            endDate: Date,
+            startDate: String,
+            endDate: String,
             totalDose: String,
-            lastDate: Date
+            lastDate: String
         }
     },
 
     investigations: {
-        date: Date,
+        date: String,
           investigationsPresent: Boolean,
         hematology: {
             hematologyPresent: Boolean,
@@ -203,7 +203,7 @@ lipidProfile: {
             xraySkull: String, // "normal", "abnormal"
             boneAge: {
                 boneAgePresent: Boolean,
-                date: Date,
+                date: String,
                 value: String,
                 gpScoring: Boolean
             }
@@ -212,7 +212,7 @@ lipidProfile: {
 
     endocrineWorkup: {
         endocrineWorkupPresent: Boolean,
-        date: Date,
+        date: String,
         tests: {
             testsPresent: Boolean,
             t4: String,
@@ -230,7 +230,7 @@ lipidProfile: {
         ghStimulationTest: {
             ghStimulationTestPresent: Boolean,
             ghStimulationType: String, // "Clonidine", "Glucagon"
-            date: Date,
+            date: String,
             place: String, // "AIIMS", "Outside"
             outsidePlace: String,
             results: [{
@@ -252,7 +252,7 @@ lipidProfile: {
     mri: {
         mriDetailsPresent: Boolean,
         performed: String,
-        date: Date,
+        date: String,
         contrastUsed: String,
         coronalSagittalCuts: String,
         place: String, // "AIIMS", "outside"
@@ -274,8 +274,8 @@ lipidProfile: {
          treatmentDetailsPresent: Boolean,
         hypothyroidism: {
            hypothyroidismPresent: Boolean,
-            diagnosisDate: Date,
-            treatmentStartDate: Date,
+            diagnosisDate: String,
+            treatmentStartDate: String,
             currentDose: String,
             doseChanged: String,
             lastT4: String,
@@ -283,11 +283,11 @@ lipidProfile: {
         },
         hypocortisolism: {
           hypocortisolismPresent: Boolean,
-            diagnosisDate: Date,
+            diagnosisDate: String,
             acthStimTest: String,
-            testDate: Date,
+            testDate: String,
             peakCortisol: String,
-            treatmentStartDate: Date,
+            treatmentStartDate: String,
             steroidType: String, // "Prednisolone", "hydrocortisone"
             currentDose: String,
             frequency: String, // "OD", "BD", "TDS"
@@ -297,18 +297,18 @@ lipidProfile: {
         },
         di: {
            iabetesInsipidusPresent: Boolean,
-            diagnosisDate: Date,
+            diagnosisDate: String,
             minirin: String,
             dose: String, // "half", "full", "double"
             frequency: String // 1, 2, 3
         },
         hypogonadism: {
               hypogonadismPresent: Boolean,
-            diagnosisDate: Date,
-            treatmentStartDate: Date,
-            fullAdultDoseDate: Date,
+            diagnosisDate: String,
+            treatmentStartDate: String,
+            fullAdultDoseDate: String,
             hormoneType: String, // "Testosterone", "estradiol"
-            mpaStartDate: Date,
+            mpaStartDate: String,
             currentDose: String,
             doseChanged: String
         },

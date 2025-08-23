@@ -8,13 +8,13 @@ export const dashboard = async (req, res) => {
     try {
         // Get all forms with populated references
         const baselineForms = await BaselineForm.find({ 'isDeleted.status': false })
-            .populate('center', 'centerName centerCode')
+            // .populate('center', 'centerName centerCode')
             .populate('createdBy', 'userName')
             .lean()
 
         const followupForms = await FollowupForm.find({ 'isDeleted.status': false })
             .populate('baselineForm', 'patientDetails.paecNo patientDetails.name')
-            .populate('center', 'centerName centerCode')
+            // .populate('center', 'centerName centerCode')
             .populate('createdBy', 'userName')
             .lean()
 

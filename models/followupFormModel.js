@@ -15,13 +15,14 @@ const followupFormSchema = new mongoose.Schema({
     },
     ghTherapy: {
         ghTherapyPresent: Boolean,
-        details: {
-            currentDose: String, // units per day
+       details:{
+currentDose: String, // units per day
             brand: String,
             administrationMethod: String, // "Pen" or "Syringe"
             syringeUsage: String, // 1-7 or >7 injections per syringe
-            costCoverage: String // "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
-        },
+            costCoverage: String ,// "Self", "CGHS", "ESI", "EHS", "Govt", "PMRF", "Others"
+       
+        } ,
         remarks: String,
     },
 
@@ -55,7 +56,7 @@ const followupFormSchema = new mongoose.Schema({
         details: {
             daysMissedPerMonth: String,
             daysMissedLast3Months: String,
-            lastPAECVisit: Date,
+            lastPAECVisit: String,
             daysMissedPerWeek: String,
             totalDaysMissedSinceLastVisit: String,
             reasons: String
@@ -93,16 +94,16 @@ const followupFormSchema = new mongoose.Schema({
     investigations: {
          investigationsPresent: Boolean,
         boneAge: {
-            lastXRayDate: Date
+            lastXRayDate: String
         },
         labTests: {
             serumT4: {
                 value: String, // ug/dl
-                date: Date
+                date: String
             },
             igf1: {
                 value: String, // mg/dl
-                date: Date
+                date: String
             }
         },
         remarks: String,
