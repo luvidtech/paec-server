@@ -2,12 +2,12 @@ import User from "../../models/userModel.js"
 import { generateToken } from "../../utils/generateToken.js"
 import HttpError from "../../utils/httpErrorMiddleware.js"
 import asyncHandler from "../../utils/asyncHandler.js"
-import { sendOtpEmail } from "../../utils/mailer.js"
+// import { sendOtpEmail } from "../../utils/mailer.js"
 import newLog from "../../utils/newLog.js"
 import Center from "../../models/centreModel.js"
 
 export const registerUser = asyncHandler(async (req, res, next) => {
-    const { loginId, password, userName, accessTo, center,phone } = req.body
+    const { loginId, password, userName, accessTo, center, phone } = req.body
 
     const isAdmin = await User.findOne({ _id: req.user._id, role: "admin", 'isDeleted.status': false })
 
@@ -51,7 +51,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
                 role: 'staff',
                 isActive: true,
                 accessTo,
-                center,phone
+                center, phone
             })
 
             const populatedUser = await user.populate('center', 'centerName')
@@ -128,15 +128,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
         return next(new HttpError("Invalid Username or Password", 401))
     }
 
-    if (user.role === "admin") {
-        generateAndSendOtp(user)
-
-        return res.status(200).json({
-            message: `OTP has been sent to ${isEmail ? "email" : "phone"}.`,
-        })
-    } else if (user.role === "staff") {
-        const role = "staff"
-    }
+    // OTP disabled: issue token directly for all roles
 
     generateToken(res, user._id)
 
@@ -161,32 +153,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     })
 })
 
-export const generateAndSendOtp = async (user) => {
-    if (user.otp && user.otp.expiresIn > Date.now()) {
-        const timeLeft = user.otp.expiresIn - Date.now()
-
-        if (timeLeft < 60000) {
-            const secondsLeft = Math.ceil(timeLeft / 1000)
-
-            throw new HttpError(
-                `OTP already sent. Please wait for ${secondsLeft} seconds before requesting a new one.`,
-                403
-            )
-        }
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    user.otp.otpCode = otp
-    user.otp.expiresIn = Date.now() + 10 * 60 * 1000
-    await user.save()
-
-    try {
-        await sendOtpEmail(user.email, otp)
-    } catch (error) {
-        console.error("Error sending OTP email:", error)
-        throw new HttpError("Could not send OTP email", 500)
-    }
-}
+// OTP flow removed
 
 export const logoutUser = asyncHandler(async (req, res) => {
     res.cookie("jwt", "", {
@@ -197,60 +164,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "Logged Out Successfully" })
 })
 
-export const verifyOtpUser = asyncHandler(async (req, res, next) => {
-    const { loginId, otpCode } = req.body
-
-    if (!loginId || !otpCode) {
-        return next(
-            new HttpError("Please provide both contact (email/phone) and OTP", 400)
-        )
-    }
-
-    let user
-    if (loginId.includes("@")) {
-        user = await User.findOne({ email: loginId, 'isDeleted.status': false })
-    } else {
-        user = await User.findOne({ phone: loginId, 'isDeleted.status': false })
-    }
-
-    if (!user) {
-        return next(new HttpError("User not found", 404))
-    }
-
-    if (
-        !user.otp ||
-        user.otp.otpCode !== otpCode ||
-        user.otp.expiresIn < Date.now()
-    ) {
-        return next(new HttpError("Invalid or expired OTP", 400))
-    }
-
-    user.otp = { otpCode: null, expired: true, expiresIn: null }
-    await user.save()
-
-    generateToken(res, user._id)
-    const data = {
-        _id: user._id,
-        name: user.userName,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-    }
-
-    const populatedUser = await user.populate('center', 'centerName')
-
-    await newLog({
-        user: user._id,
-        action: 'created',
-        module: 'user',
-        modifiedData: {
-            user: user.userName,
-            center: populatedUser.center?.centerName,
-        }
-    })
-
-    return res.json(data)
-})
+// export const verifyOtpUser = asyncHandler(async (req, res, next) => {})
 
 export const updateUserDetails = asyncHandler(async (req, res, next) => {
     const { newPassword, email, phone, center, username } = req.body

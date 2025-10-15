@@ -1107,8 +1107,8 @@ export const exportForm = asyncHandler(async (req, res) => {
     // Log the export
     await newLog({
       user: req.user._id,
-      action: "exported",
-      module: "excel_export",
+      action: "export",
+      module: "baselineform",
       modifiedData: {
         formType,
         totalBaseline: baselineForms.length,
