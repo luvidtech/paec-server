@@ -131,8 +131,8 @@ export const exportImportTemplateFormat = asyncHandler(async (req, res) => {
         if (phys.pubertalStatus === "Pubertal") spont = "1"
 
         // GHST results (pick first seen values)
-        const firstClonidine = (ghst.results || []).find(r => r.clonidineGH)
-        const firstGlucagon = (ghst.results || []).find(r => r.glucagonGH)
+        const firstClonidine = (ghst.results || []).find(r => r && r.clonidineGH)
+        const firstGlucagon = (ghst.results || []).find(r => r && r.glucagonGH)
 
         // MRI code
         const mriCode = mri.performed === "Yes" ? 1 : mri.performed === "No" ? 2 : ""
@@ -172,10 +172,10 @@ export const exportImportTemplateFormat = asyncHandler(async (req, res) => {
             "", "", "", "", "", "",
             // GHST
             ghst.date || "",
-            firstClonidine?.clonidineGH || "",
-            firstClonidine?.time || "",
-            firstGlucagon?.glucagonGH || "",
-            firstGlucagon?.time || "",
+            (firstClonidine && firstClonidine.clonidineGH) || "",
+            (firstClonidine && firstClonidine.time) || "",
+            (firstGlucagon && firstGlucagon.glucagonGH) || "",
+            (firstGlucagon && firstGlucagon.time) || "",
             // MRI
             mriCode,
             mriFind.otherFindings || "",
